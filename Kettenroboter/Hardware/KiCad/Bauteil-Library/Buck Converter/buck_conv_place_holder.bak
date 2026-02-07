@@ -1,0 +1,143 @@
+(kicad_symbol_lib
+	(version 20241209)
+	(generator "kicad_symbol_editor")
+	(generator_version "9.0")
+	(symbol "buck_conv_12V_5V_ph"
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(property "Reference" "ph buck converter"
+			(at 0 6.604 0)
+			(do_not_autoplace)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" ""
+			(at 0 0 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 0 0 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" ""
+			(at 0 0 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" ""
+			(at 0 0 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(symbol "buck_conv_12V_5V_ph_0_1"
+			(rectangle
+				(start -10 5)
+				(end 10 -5)
+				(stroke
+					(width 0)
+					(type default)
+				)
+				(fill
+					(type color)
+					(color 255 240 118 1)
+				)
+			)
+		)
+		(symbol "buck_conv_12V_5V_ph_1_1"
+			(pin input line
+				(at -12.7 2.54 0)
+				(length 2.54)
+				(name "IN+"
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+				(number ""
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+			)
+			(pin input line
+				(at -12.7 -2.54 0)
+				(length 2.54)
+				(name "IN-"
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+				(number ""
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+			)
+			(pin input line
+				(at 12.7 2.54 180)
+				(length 2.54)
+				(name "OUT+"
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+				(number ""
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+			)
+			(pin input line
+				(at 12.7 -2.54 180)
+				(length 2.54)
+				(name "OUT-"
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+				(number ""
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+			)
+		)
+		(embedded_fonts no)
+	)
+)
