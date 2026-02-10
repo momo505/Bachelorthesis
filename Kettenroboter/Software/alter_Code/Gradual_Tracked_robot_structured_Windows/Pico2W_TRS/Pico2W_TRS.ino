@@ -119,6 +119,16 @@ void handleCommand(char cmd) {
 // ========================= SRF02 READ =========================
 #include "srf02.h"
 
+// ========================= Postbox / Pico-SDK Mutex =========================
+#include <FreeRTOS.h>
+#include "semphr.h"
+
+//SemaphoreHandle_t  mutex;
+volatile bool newcontent = false;
+volatile uint32_t postbox[32] = {0};
+
+SemaphoreHandle_t  mutex = xSemaphoreCreateMutex();
+
 // ========================= SETUP =========================
 void setup() {
     Serial.begin(115200);
