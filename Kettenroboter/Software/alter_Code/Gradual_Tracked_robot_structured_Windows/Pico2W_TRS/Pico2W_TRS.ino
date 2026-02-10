@@ -1,4 +1,5 @@
 #include <Wire.h>
+#include <FreeRTOS.h>
 #include "MySoftwareWire.h"
 
 //compile with acli compile -j 0 -v -e -b rp2040:rp2040:rpipico2w
@@ -128,6 +129,12 @@ volatile bool newcontent = false;
 volatile uint32_t postbox[32] = {0};
 
 SemaphoreHandle_t  mutex = xSemaphoreCreateMutex();
+// ========================= MUTEX / POSTBOX =========================
+SemaphoreHandle_t mutex = NULL;
+mutex = xSemaphoreCreateMutex();
+
+volatile uint32_t postbox[32];
+volatile bool newcontent = False;
 
 // ========================= SETUP =========================
 void setup() {
@@ -158,6 +165,16 @@ void setup() {
     applyBrake();
 
     if (homed) Serial.println(" Homing done! Enter speed like this → speed:0.05");
+
+    //Mutex für postbox
+    if(mutex != NULL){
+        Serial.println("Mutex created postbox up and working ");
+    }else{
+        Serial.println("!Error: Could not create Mutex!");
+    }
+    if(xSemaphoreTake(mutex, portMAX_DELAY))
+
+
 }
 
 void setup1(){
