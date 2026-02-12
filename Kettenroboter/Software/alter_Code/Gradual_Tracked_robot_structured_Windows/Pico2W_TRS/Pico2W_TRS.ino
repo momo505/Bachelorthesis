@@ -121,20 +121,23 @@ void handleCommand(char cmd) {
 #include "srf02.h"
 
 // ========================= Postbox / Pico-SDK Mutex =========================
-#include <FreeRTOS.h>
+//include <FreeRTOS.h>
 #include "semphr.h"
+#define POSTBOXSIZE 32
 
-//SemaphoreHandle_t  mutex;
+SemaphoreHandle_t  pb_mutex = xSemaphoreCreateMutex();
 volatile bool newcontent = false;
-volatile uint32_t postbox[32] = {0};
+volatile uint32_t postbox[POSTBOXSIZE] = {0};
 
-SemaphoreHandle_t  mutex = xSemaphoreCreateMutex();
+//pb_mutex = xSemaphoreCreateMutex();
+/*
 // ========================= MUTEX / POSTBOX =========================
 SemaphoreHandle_t mutex = NULL;
 mutex = xSemaphoreCreateMutex();
 
 volatile uint32_t postbox[32];
 volatile bool newcontent = False;
+*/
 
 // ========================= SETUP =========================
 void setup() {
@@ -167,12 +170,15 @@ void setup() {
     if (homed) Serial.println(" Homing done! Enter speed like this → speed:0.05");
 
     //Mutex für postbox
-    if(mutex != NULL){
+    if(pb_mutex != NULL){
         Serial.println("Mutex created postbox up and working ");
     }else{
         Serial.println("!Error: Could not create Mutex!");
     }
-    if(xSemaphoreTake(mutex, portMAX_DELAY))
+    if(xSemaphoreTake(pb_mutex, portMAX_DELAY)){
+        delay(1);
+        xSemaphoreGive(pb_mutex);
+    }
 
 
 }
@@ -277,8 +283,26 @@ void loop() {
             lastTime = now;
         }
     }
+    // --------- Postbox data exchange ---------
+    if(xSemaphoreTake(pb_mutex, portMAX_DELAY)){
+        Serial.println("Postbox open to Core0, owning Mutex");
+        Serial.print("   newcontent:"); if(newcontent==true){Serial.println("TRUE");} else{Serial.println("FALSE");}
+        for(int i=0; i<POSTBOXSIZE; i++){
+            postbox[i] = i;
+        }
+        newcontent = true;
+        Serial.println("Postbox filled returning Mutex");
+        xSemaphoreGive(pb_mutex);
+    }
 }
 
 void loop1(){
-
+    if(xSemaphoreTake(pb_mutex, portMAX_DELAY)){
+        if(newcontent == true){
+            for(int i=0; i<POSTBOXSIZE; i++){
+                postbox[i] = i;
+            }
+        }
+        xSemaphoreGive(pb_mutex);
+    }
 }
