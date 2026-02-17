@@ -1,0 +1,31 @@
+mov pc, pins
+jmp c_incr
+jmp c_decr
+jmp perform
+
+c_incr:
+set x, 1
+mov pc, pins
+c_decr:
+set x, 0
+mov y, ~y
+jmp y-- cont
+cont:
+mov y, ~y
+jmp write
+write:
+decr:
+jmp y--, d_cont
+d_cont:
+jmp write
+write:
+in y, 32			; je nach Implementation Zahl anpassen
+wait 0 pin 0
+wait 0 pin 1
+jmp 0				; ggf wrap statt jmp
+
+% c-sdk {
+static inline void pio_qei_init(PIO pio, uint sm, uint offset, uint pin){
+	pio_sm_config c = pio_qei_get_default_config(offset);
+}
+%}

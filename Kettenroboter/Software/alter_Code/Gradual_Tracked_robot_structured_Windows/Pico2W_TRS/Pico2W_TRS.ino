@@ -2,7 +2,9 @@
 #include <FreeRTOS.h>
 #include "MySoftwareWire.h"
 
-//compile with acli compile -j 0 -v -e -b rp2040:rp2040:rpipico2w
+// enable FreeRTOS SMP with Tools: Operating System: FreeRTOS SMP
+// compile with acli compile -j 0 -v -e -b rp2040:rp2040:rpipico2w
+// (in windows compile pio asm with pioasm.exe pio_code.pio pio_code.pio.h
 // find port: sudo dmesg | egrep -i --color 'ttyACM'
 // arduino-cli upload I2Csketch.ino -p /dev/ttyACM0 -b rp2040:rp2040:rpipico2w
 // serial: sudo screen /dev/ttyACM0 115200          (ctrl-d to detach)
@@ -121,11 +123,12 @@ void handleCommand(char cmd) {
 #include "srf02.h"
 
 // ========================= Postbox / Pico-SDK Mutex =========================
-//include <FreeRTOS.h>
+#include <FreeRTOS.h>
 #include "semphr.h"
+#include "icc.h"
 #define POSTBOXSIZE 32
 
-SemaphoreHandle_t  pb_mutex = xSemaphoreCreateMutex();
+SemaphoreHandle_t  pb_mutex; // = xSemaphoreCreateMutex();
 volatile bool newcontent = false;
 volatile uint32_t postbox[POSTBOXSIZE] = {0};
 
@@ -141,12 +144,34 @@ volatile bool newcontent = False;
 
 // ========================= SETUP =========================
 void setup() {
+    // Serial Setup
     Serial.begin(115200);
-    Wire.begin();
+    // (Software I2C Setup)
     sw.begin();
-    //Wire.SDA()
-    //Wire.SCL()
+    
 
+    if (homed) Serial.println(" Homing done! Enter speed like this → speed:0.05");
+
+    //Mutex für postbox
+    pb_mutex = createMutex();
+    if(pb_mutex != NULL){
+        Serial.println("Mutex created postbox up and working ");
+    }else{
+        Serial.println("!Error: Could not create Mutex!");
+    }
+    if(mutexTake(pb_mutex)){
+        delay(1);
+        mutexGive(pb_mutex);
+    }
+
+
+}
+
+void setup1(){ // Core1: Motor control, QEI & Control loops
+    // I2C Setup
+    Wire.begin();
+
+    // Pin configuration
     pinMode(ENCODER_A_PIN, INPUT_PULLUP);
     pinMode(ENCODER_B_PIN, INPUT_PULLUP);
     pinMode(encoder_ChA, INPUT_PULLUP); pinMode(encoder_ChB, INPUT_PULLUP);
@@ -154,6 +179,7 @@ void setup() {
     pinMode(hallSensorPin, INPUT_PULLUP); pinMode(hallSensorPin2, INPUT_PULLUP);
     pinMode(brakePin, OUTPUT); pinMode(brakePin2, OUTPUT);
 
+    // Interrupt configuration
     attachInterrupt(digitalPinToInterrupt(ENCODER_A_PIN), countEncoderA, RISING);
     attachInterrupt(digitalPinToInterrupt(ENCODER_B_PIN), countEncoderB, RISING);
     attachInterrupt(digitalPinToInterrupt(encoder_ChA), updateEncoder1, RISING);
@@ -161,46 +187,31 @@ void setup() {
     attachInterrupt(digitalPinToInterrupt(encoder_ChA2), updateEncoder2, RISING);
     attachInterrupt(digitalPinToInterrupt(encoder_ChB2), updateEncoder2B, RISING);
 
+    // Control Setup
     resetPIDandEncoders();
     handleCommand(command);
     releaseBrake();
     homeMotor();
     applyBrake();
-
-    if (homed) Serial.println(" Homing done! Enter speed like this → speed:0.05");
-
-    //Mutex für postbox
-    if(pb_mutex != NULL){
-        Serial.println("Mutex created postbox up and working ");
-    }else{
-        Serial.println("!Error: Could not create Mutex!");
-    }
-    if(xSemaphoreTake(pb_mutex, portMAX_DELAY)){
-        delay(1);
-        xSemaphoreGive(pb_mutex);
-    }
-
-
-}
-
-void setup1(){
-
 }
 
 // ========================= LOOP =========================
 void loop() {
-    // --------- CHECK FRONT OBSTACLES ---------
+        // --------- CHECK FRONT OBSTACLES (SRF02) ---------
     int sum = 0, valid = 0;
+	// Read front Sensors
     for (int i = 0; i < 3; i++) { int d = readSRF02(frontSensors[i]); if (d > 0) { sum += d; valid++; } }
-    int avgFront = (valid > 0) ? (sum / valid) : 999;
+    int avgFront = (valid > 0) ? (sum / valid) : 999; // average front sensor reading
 
-    if (avgFront < 40 && !safeMode) {
+    if (avgFront < 40 && !safeMode) { // if avg sensor reading <40 and safeMode disabled set speed 0
+		// driving Motors (sync I2C):
         setMotorSpeed(MOTOR_A_ADDR, 0); setMotorSpeed(MOTOR_B_ADDR, 0);
         setMotorDirection(MOTOR_A_ADDR, 0); setMotorDirection(MOTOR_B_ADDR, 0);
-        command = 's'; safeMode = true; moving = false;
-        resetPIDandEncoders();
-
-        Serial.println(" Obstacle detected! Enter flipper angle like this → flipperAngle:30 or flipperAngle:home (0 = ignore):");
+        command = 's'; safeMode = true; moving = false; //enable safeMode disable moving
+        resetPIDandEncoders(); // reset control loop
+		
+		// get flipperangle (trigger communication)
+        //Serial.println(" Obstacle detected! Enter flipper angle like this → flipperAngle:30 or flipperAngle:home (0 = ignore):");
         bool flipperDone = false;
         while (!flipperDone) {
             if (Serial.available()) {
@@ -210,7 +221,7 @@ void loop() {
                     if (val == "home") moveToAngle(-1);
                     else { long angle = val.toInt(); if (angle != 0) moveToAngle(angle); }
                     applyBrake(); flipperDone = true;
-                    Serial.println(" Flipper moved. Waiting for user command...");
+                    //Serial.println(" Flipper moved. Waiting for user command...");
                 }
             }
         }
@@ -235,6 +246,31 @@ void loop() {
             else moveToAngle(val.toInt());
         }
         while (Serial.available()) Serial.read();
+    }
+
+    
+    // --------- Postbox data exchange ---------
+    if(xSemaphoreTake(pb_mutex, portMAX_DELAY)){
+        Serial.println("Postbox open to Core0, owning Mutex");
+        Serial.print("   newcontent:"); if(newcontent==true){Serial.println("TRUE");} else{Serial.println("FALSE");}
+        for(int i=0; i<POSTBOXSIZE; i++){
+            postbox[i] = i;
+        }
+        newcontent = true;
+        Serial.println("Postbox filled returning Mutex");
+        xSemaphoreGive(pb_mutex);
+    }
+}
+
+void loop1(){ // Core1: Motor control, QEI & Control loops
+    // --------- Postbox Test ---------
+    if(xSemaphoreTake(pb_mutex, portMAX_DELAY)){
+        if(newcontent == true){
+            for(int i=0; i<POSTBOXSIZE; i++){
+                postbox[i] = i;
+            }
+        }
+        xSemaphoreGive(pb_mutex);
     }
 
     // --------- PID CONTROL ---------
@@ -278,31 +314,9 @@ void loop() {
             setMotorSpeed(MOTOR_A_ADDR, pwmA);
             setMotorSpeed(MOTOR_B_ADDR, pwmB);
 
-            Serial.print(setSpeed); Serial.print(" "); Serial.print(speedA); Serial.print(" "); Serial.println(speedB);
+            //Serial.print(setSpeed); Serial.print(" "); Serial.print(speedA); Serial.print(" "); Serial.println(speedB);
 
             lastTime = now;
         }
-    }
-    // --------- Postbox data exchange ---------
-    if(xSemaphoreTake(pb_mutex, portMAX_DELAY)){
-        Serial.println("Postbox open to Core0, owning Mutex");
-        Serial.print("   newcontent:"); if(newcontent==true){Serial.println("TRUE");} else{Serial.println("FALSE");}
-        for(int i=0; i<POSTBOXSIZE; i++){
-            postbox[i] = i;
-        }
-        newcontent = true;
-        Serial.println("Postbox filled returning Mutex");
-        xSemaphoreGive(pb_mutex);
-    }
-}
-
-void loop1(){
-    if(xSemaphoreTake(pb_mutex, portMAX_DELAY)){
-        if(newcontent == true){
-            for(int i=0; i<POSTBOXSIZE; i++){
-                postbox[i] = i;
-            }
-        }
-        xSemaphoreGive(pb_mutex);
     }
 }

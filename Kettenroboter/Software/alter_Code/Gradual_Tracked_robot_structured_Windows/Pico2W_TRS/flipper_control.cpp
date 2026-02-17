@@ -32,7 +32,8 @@ void moveBackward() {
     digitalWrite(brakePin2, HIGH);
     writeI2C(MD03_ADDR, SPEED_REG, 50);
     writeI2C(MD03_ADDR2, SPEED_REG, 50);
-    delay(5); writeI2C(MD03_ADDR, CMD_REG, CMD_REVERSE);
+    delay(5); 
+    writeI2C(MD03_ADDR, CMD_REG, CMD_REVERSE);
     writeI2C(MD03_ADDR2, CMD_REG, CMD_REVERSE);
     delay(5);
 }
