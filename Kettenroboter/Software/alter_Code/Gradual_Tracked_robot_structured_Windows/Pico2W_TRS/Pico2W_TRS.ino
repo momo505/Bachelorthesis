@@ -142,6 +142,9 @@ volatile uint32_t postbox[32];
 volatile bool newcontent = False;
 */
 
+// ========================= PIO-QEI =========================
+//#include "pio_qei.h"
+
 // ========================= SETUP =========================
 void setup() {
     // Serial Setup
@@ -193,6 +196,13 @@ void setup1(){ // Core1: Motor control, QEI & Control loops
     releaseBrake();
     homeMotor();
     applyBrake();
+
+    // PIO-QEI-0 Setup
+    /*
+    byte qei0_pins[];
+    qei0_pins = {12, 13};
+    pio_setup(qei0_pins);
+    */
 }
 
 // ========================= LOOP =========================

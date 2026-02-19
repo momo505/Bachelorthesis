@@ -13,35 +13,37 @@
 // ------- //
 
 #define pio_qei_wrap_target 0
-#define pio_qei_wrap 15
+#define pio_qei_wrap 17
 #define pio_qei_pio_version 1
 
 static const uint16_t pio_qei_program_instructions[] = {
             //     .wrap_target
     0xa0a0, //  0: mov    pc, pins
-    0x0003, //  1: jmp    3
-    0x0005, //  2: jmp    5
-    0xe021, //  3: set    x, 1
-    0xa0a0, //  4: mov    pc, pins
-    0xe020, //  5: set    x, 0
-    0xa04a, //  6: mov    y, ~y
-    0x0088, //  7: jmp    y--, 8
-    0xa04a, //  8: mov    y, ~y
-    0x000a, //  9: jmp    10
+    0x0004, //  1: jmp    4
+    0x0006, //  2: jmp    6
+    0x0008, //  3: jmp    8
+    0xe021, //  4: set    x, 1
+    0xa0a0, //  5: mov    pc, pins
+    0xe020, //  6: set    x, 0
+    0xa0a0, //  7: mov    pc, pins
+    0x002d, //  8: jmp    !x, 13
+    0xa04a, //  9: mov    y, ~y
     0x008b, // 10: jmp    y--, 11
-    0x000c, // 11: jmp    12
-    0x4040, // 12: in     y, 32
-    0x2020, // 13: wait   0 pin, 0
-    0x2021, // 14: wait   0 pin, 1
-    0x0000, // 15: jmp    0
+    0xa04a, // 11: mov    y, ~y
+    0x000e, // 12: jmp    14
+    0x008e, // 13: jmp    y--, 14
+    0xa0c2, // 14: mov    isr, y
+    0x8000, // 15: push   noblock
+    0x2020, // 16: wait   0 pin, 0
+    0x2021, // 17: wait   0 pin, 1
             //     .wrap
 };
 
 #if !PICO_NO_HARDWARE
 static const struct pio_program pio_qei_program = {
     .instructions = pio_qei_program_instructions,
-    .length = 16,
-    .origin = -1,
+    .length = 18,
+    .origin = 0,
     .pio_version = pio_qei_pio_version,
 #if PICO_PIO_VERSION > 0
     .used_gpio_ranges = 0x0
@@ -51,11 +53,13 @@ static const struct pio_program pio_qei_program = {
 static inline pio_sm_config pio_qei_program_get_default_config(uint offset) {
     pio_sm_config c = pio_get_default_sm_config();
     sm_config_set_wrap(&c, offset + pio_qei_wrap_target, offset + pio_qei_wrap);
+    sm_config_set_fifo_join(&c, PIO_FIFO_JOIN_RX);
+    sm_config_set_clkdiv_int_frac(&c, 150, 0);
     return c;
 }
 
 static inline void pio_qei_init(PIO pio, uint sm, uint offset, uint pin){
-	pio_sm_config c = pio_qei_get_default_config(offset);
+	pio_sm_config c = pio_qei_get_default_sm_config(offset);
 }
 
 #endif

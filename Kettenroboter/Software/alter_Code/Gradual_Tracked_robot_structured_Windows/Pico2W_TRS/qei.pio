@@ -1,30 +1,40 @@
 .program pio_qei
+.pio_version 1 ; newer version (RP2350)
+.clock_div 150
+.fifo rx ; no txfifo needed -> only larger rxfifo used
+.origin 0
 .wrap_target
-mov pc, pins
-jmp c_incr
-jmp c_decr
-;jmp perform
+mov PC, pins
+jmp pos_edge
+jmp neg_edge
+jmp perform_op
 
-c_incr:
+pos_edge:
 set x, 1
-mov pc, pins
-c_decr:
+mov PC, pins
+
+neg_edge:
 set x, 0
-mov y, ~y
-jmp y--, cont
-cont:
-mov y, ~y
-jmp write1
-write1:
-decr:
-jmp y--, d_cont
-d_cont:
-jmp write2
-write2:
-in y, 32			; je nach Implementation Zahl anpassen
+mov PC, pins
+
+perform_op:
+jmp !X, decrement
+mov Y, ~Y
+jmp Y--, continue_increment
+continue_increment:
+mov Y, ~Y
+jmp write_rx
+decrement:
+jmp Y--, write_rx
+
+write_rx:
+mov ISR, Y
+push noblock
+
+wait_on_zeros:
 wait 0 pin 0
 wait 0 pin 1
-jmp 0				; ggf wrap statt jmp
+
 .wrap
 
 % c-sdk {
