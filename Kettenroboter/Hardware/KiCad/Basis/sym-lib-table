@@ -1,6 +1,6 @@
 (sym_lib_table
   (version 7)
-  (lib (name "BA_NCP1117")(type "KiCad")(uri "D:/Github-Repositories/Bachelorthesis/Kettenroboter/Hardware/KiCad/Bauteil-Library/NCP1117LPST33T3G/NCP1117LPST33T3G.kicad_sym")(options "")(descr ""))
-  (lib (name "BA_Pico_2_W")(type "KiCad")(uri "D:/Github-Repositories/Bachelorthesis/Kettenroboter/Hardware/KiCad/Bauteil-Library/Pico 2 W/Raspberrypi pico2 W.kicad_sym")(options "")(descr ""))
-  (lib (name "buck_conv_place_holder")(type "KiCad")(uri "D:/Github-Repositories/Bachelorthesis/Kettenroboter/Hardware/KiCad/Bauteil-Library/Buck Converter/buck_conv_place_holder.kicad_sym")(options "")(descr ""))
+  (lib (name "BA_NCP1117")(type "KiCad")(uri "D:/Github-Repositories/BA_HardwareDesign/Bachelorthesis/Kettenroboter/Hardware/KiCad/Bauteil-Library/NCP1117LPST33T3G/NCP1117LPST33T3G.kicad_sym")(options "")(descr ""))
+  (lib (name "BA_Pico_2_W")(type "KiCad")(uri "D:/Github-Repositories/BA_HardwareDesign/Bachelorthesis/Kettenroboter/Hardware/KiCad/Bauteil-Library/Pico 2 W/Raspberrypi pico2 W.kicad_sym")(options "")(descr ""))
+  (lib (name "buck_conv_place_holder")(type "KiCad")(uri "D:/Github-Repositories/BA_HardwareDesign/Bachelorthesis/Kettenroboter/Hardware/KiCad/Bauteil-Library/Buck Converter/buck_conv_place_holder.kicad_sym")(options "")(descr ""))
 )
