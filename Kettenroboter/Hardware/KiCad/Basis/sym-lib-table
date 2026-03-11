@@ -5,4 +5,6 @@
   (lib (name "buck_conv_place_holder")(type "KiCad")(uri "D:/Github-Repositories/BA_HardwareDesign/Bachelorthesis/Kettenroboter/Hardware/KiCad/Bauteil-Library/Buck Converter/buck_conv_place_holder.kicad_sym")(options "")(descr ""))
   (lib (name "BA_screw_term2")(type "KiCad")(uri "D:/Github-Repositories/BA_HardwareDesign/Bachelorthesis/Kettenroboter/Hardware/KiCad/Bauteil-Library/Wuerth_Screw_Term2/WR-TBL_V2_691241500008.kicad_sym")(options "")(descr ""))
   (lib (name "BA_Pico_1")(type "KiCad")(uri "D:/Github-Repositories/BA_HardwareDesign/Bachelorthesis/Kettenroboter/Hardware/KiCad/Bauteil-Library/Pico (1)/SC0917.kicad_sym")(options "")(descr ""))
+  (lib (name "BA_screw_term3_3pin")(type "KiCad")(uri "D:/Github-Repositories/BA_HardwareDesign/Bachelorthesis/Kettenroboter/Hardware/KiCad/Bauteil-Library/Wuerth_Screw_Term3_3pin/WR-TBL_V3_691103110003.kicad_sym")(options "")(descr ""))
+  (lib (name "BA_screw_term3_2pin")(type "KiCad")(uri "D:/Github-Repositories/BA_HardwareDesign/Bachelorthesis/Kettenroboter/Hardware/KiCad/Bauteil-Library/Wuerth_Screw_Term3_2pin/WR-TBL_V3_pin2_691103110002.kicad_sym")(options "")(descr ""))
 )
