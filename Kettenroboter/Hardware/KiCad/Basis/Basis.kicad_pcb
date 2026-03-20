@@ -2112,7 +2112,7 @@
 		(descr "Through hole straight pin header, 1x03, 2.54mm pitch, single row")
 		(tags "Through hole pin header THT 1x03 2.54mm single row")
 		(property "Reference" "J14"
-			(at 0 -2.38 0)
+			(at 2.54 8.509 0)
 			(layer "F.SilkS")
 			(uuid "21dbe6e8-57d8-4ad1-8021-7402c32e47d1")
 			(effects
@@ -30588,7 +30588,7 @@
 		(descr "Through hole straight pin header, 1x01, 2.54mm pitch, single row")
 		(tags "Through hole pin header THT 1x01 2.54mm single row")
 		(property "Reference" "J15"
-			(at 0 -2.38 90)
+			(at 5.715 -2.286 90)
 			(layer "F.SilkS")
 			(uuid "51dd5840-f1bd-4a88-a1fe-dbc50d1eb94c")
 			(effects
@@ -31398,7 +31398,7 @@
 		(descr "Resistor SMD 1206 (3216 Metric), square (rectangular) end terminal, IPC-7351 nominal with elongated pad for handsoldering. (Body size source: IPC-SM-782 page 72, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf), generated with kicad-footprint-generator")
 		(tags "resistor handsolder")
 		(property "Reference" "R23"
-			(at 4.191 -0.889 0)
+			(at 4.064 -1.397 0)
 			(layer "B.SilkS")
 			(uuid "512ea23f-29c3-4563-bfa9-4717b74b1010")
 			(effects
@@ -33611,6 +33611,17 @@
 			)
 		)
 	)
+	(gr_text "5V"
+		(at 122.555 124.079 0)
+		(layer "F.SilkS")
+		(uuid "2bd576e2-9875-4d36-abdd-d70b59f90001")
+		(effects
+			(font
+				(size 0.65 0.75)
+				(thickness 0.15)
+			)
+		)
+	)
 	(gr_text "+5V"
 		(at 149.225 78.359 0)
 		(layer "F.SilkS")
@@ -33622,6 +33633,17 @@
 				(bold yes)
 			)
 			(justify left bottom)
+		)
+	)
+	(gr_text "Vcc_DO"
+		(at 118.745 129.286 0)
+		(layer "F.SilkS")
+		(uuid "508b54a5-3fa8-4f5e-8f0a-b6f7305f60d0")
+		(effects
+			(font
+				(size 0.65 0.75)
+				(thickness 0.15)
+			)
 		)
 	)
 	(gr_text "INPUT"
@@ -33678,6 +33700,17 @@
 		(at 177.038 80.518 90)
 		(layer "F.SilkS")
 		(uuid "721e5fdc-88f3-481b-a3bd-0aa3e72cc87a")
+		(effects
+			(font
+				(size 0.65 0.75)
+				(thickness 0.15)
+			)
+		)
+	)
+	(gr_text "V_ext"
+		(at 118.999 132.08 0)
+		(layer "F.SilkS")
+		(uuid "785d9880-9b8f-4f09-86aa-00578585ed83")
 		(effects
 			(font
 				(size 0.65 0.75)
@@ -33766,6 +33799,17 @@
 			)
 		)
 	)
+	(gr_text "3V3"
+		(at 127.762 129.54 0)
+		(layer "F.SilkS")
+		(uuid "d1ce441e-a334-4f0f-8515-b77421e9dc33")
+		(effects
+			(font
+				(size 0.65 0.75)
+				(thickness 0.15)
+			)
+		)
+	)
 	(gr_text "V_ex"
 		(at 149.352 73.025 0)
 		(layer "F.SilkS")
@@ -33831,12 +33875,12 @@
 	)
 	(dimension
 		(type orthogonal)
-		(layer "Dwgs.User")
-		(uuid "9bb2a0cd-49c8-4239-a5c1-5e37e9284b6f")
+		(layer "F.SilkS")
+		(uuid "848f56b6-078f-46f9-a901-bd4002f55130")
 		(pts
-			(xy 177.673 138.049) (xy 87.122 138.049)
+			(xy 87.122 138.049) (xy 177.673 138.049)
 		)
-		(height 13.462)
+		(height 16.764)
 		(orientation 0)
 		(format
 			(prefix "")
@@ -33847,7 +33891,7 @@
 			(suppress_zeroes yes)
 		)
 		(style
-			(thickness 0.2)
+			(thickness 0.1)
 			(arrow_length 1.27)
 			(text_position_mode 0)
 			(arrow_direction outward)
@@ -33856,25 +33900,25 @@
 			(keep_text_aligned yes)
 		)
 		(gr_text "90,551"
-			(at 132.3975 149.711 0)
-			(layer "Dwgs.User")
-			(uuid "9bb2a0cd-49c8-4239-a5c1-5e37e9284b6f")
+			(at 132.3975 153.713 0)
+			(layer "F.SilkS")
+			(uuid "848f56b6-078f-46f9-a901-bd4002f55130")
 			(effects
 				(font
-					(size 1.5 1.5)
-					(thickness 0.3)
+					(size 1 1)
+					(thickness 0.1)
 				)
 			)
 		)
 	)
 	(dimension
 		(type orthogonal)
-		(layer "Dwgs.User")
-		(uuid "f957fbdc-791d-4e62-ab91-45e866ffc595")
+		(layer "F.SilkS")
+		(uuid "fd0ac1cc-9ba1-4667-b4c4-18c20aa3d29b")
 		(pts
-			(xy 177.673 138.049) (xy 177.673 36.83)
+			(xy 177.673 35.814) (xy 177.673 138.049)
 		)
-		(height 16.51)
+		(height 21.336)
 		(orientation 1)
 		(format
 			(prefix "")
@@ -33885,7 +33929,7 @@
 			(suppress_zeroes yes)
 		)
 		(style
-			(thickness 0.2)
+			(thickness 0.1)
 			(arrow_length 1.27)
 			(text_position_mode 0)
 			(arrow_direction outward)
@@ -33893,16 +33937,15 @@
 			(extension_offset 0.5)
 			(keep_text_aligned yes)
 		)
-		(gr_text "101,219"
-			(at 192.383 87.4395 90)
-			(layer "Dwgs.User")
-			(uuid "f957fbdc-791d-4e62-ab91-45e866ffc595")
+		(gr_text "102,235"
+			(at 197.909 86.9315 90)
+			(layer "F.SilkS")
+			(uuid "fd0ac1cc-9ba1-4667-b4c4-18c20aa3d29b")
 			(effects
 				(font
-					(size 1.5 1.5)
-					(thickness 0.3)
+					(size 1 1)
+					(thickness 0.1)
 				)
-				(justify mirror)
 			)
 		)
 	)
