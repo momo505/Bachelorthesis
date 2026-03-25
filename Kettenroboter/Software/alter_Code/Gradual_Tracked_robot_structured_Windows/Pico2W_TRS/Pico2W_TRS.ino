@@ -122,6 +122,7 @@ void handleCommand(char cmd) {
 // ========================= SRF02 READ =========================
 #include "srf02.h"
 
+/*
 // ========================= Postbox / Pico-SDK Mutex =========================
 #include <FreeRTOS.h>
 #include "semphr.h"
@@ -132,7 +133,7 @@ SemaphoreHandle_t  pb_mutex; // = xSemaphoreCreateMutex();
 volatile bool newcontent = false;
 volatile uint32_t postbox[POSTBOXSIZE] = {0};
 
-//pb_mutex = xSemaphoreCreateMutex();
+pb_mutex = xSemaphoreCreateMutex();
 /*
 // ========================= MUTEX / POSTBOX =========================
 SemaphoreHandle_t mutex = NULL;
@@ -155,6 +156,7 @@ void setup() {
 
     if (homed) Serial.println(" Homing done! Enter speed like this → speed:0.05");
 
+    /*
     //Mutex für postbox
     pb_mutex = createMutex();
     if(pb_mutex != NULL){
@@ -166,6 +168,7 @@ void setup() {
         delay(1);
         mutexGive(pb_mutex);
     }
+    */
 
 
 }
@@ -259,6 +262,7 @@ void loop() {
     }
 
     
+    /*
     // --------- Postbox data exchange ---------
     if(xSemaphoreTake(pb_mutex, portMAX_DELAY)){
         Serial.println("Postbox open to Core0, owning Mutex");
@@ -270,9 +274,11 @@ void loop() {
         Serial.println("Postbox filled returning Mutex");
         xSemaphoreGive(pb_mutex);
     }
+    */
 }
 
 void loop1(){ // Core1: Motor control, QEI & Control loops
+    /*
     // --------- Postbox Test ---------
     if(xSemaphoreTake(pb_mutex, portMAX_DELAY)){
         if(newcontent == true){
@@ -282,6 +288,7 @@ void loop1(){ // Core1: Motor control, QEI & Control loops
         }
         xSemaphoreGive(pb_mutex);
     }
+    */
 
     // --------- PID CONTROL ---------
     if (!safeMode && speedSetByUser && moving) {

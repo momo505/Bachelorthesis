@@ -59,7 +59,8 @@ static inline pio_sm_config pio_qei_program_get_default_config(uint offset) {
 }
 
 static inline void pio_qei_init(PIO pio, uint sm, uint offset, uint pin){
-	pio_sm_config c = pio_qei_get_default_sm_config(offset);
+	pio_sm_config c = pio_get_default_sm_config();
+    //pio_sm_config c = pio_qei_get_default_sm_config(offset);
 }
 
 #endif
