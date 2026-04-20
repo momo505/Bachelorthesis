@@ -1,0 +1,125 @@
+#include <Wire.h>
+//#include <FreeRTOS.h>
+//#include "MySoftwareWire.h"
+
+// enable FreeRTOS SMP with Tools: Operating System: FreeRTOS SMP
+// compile with acli compile -j 0 -v -e -b rp2040:rp2040:rpipico2w
+// (in windows compile pio asm with pioasm.exe pio_code.pio pio_code.pio.h
+// find port: sudo dmesg | egrep -i --color 'ttyACM'
+// arduino-cli upload I2Csketch.ino -p /dev/ttyACM0 -b rp2040:rp2040:rpipico2w
+// serial: sudo screen /dev/ttyACM0 115200          (ctrl-d to detach)
+
+// ========================= MOTOR A/B CONFIG =========================
+#include "motor_config.h"
+
+// ========================= MD03 CONFIG flipper 1 =========================
+//#include "md03_config.h"
+
+/*
+volatile long encoderCount1 = 0;
+volatile long encoderCount2 = 0;
+volatile long encoderCount1B = 0;
+volatile long encoderCount2B = 0;
+*/
+/*
+long targetAngle = 0;
+bool homed = false;
+const float countsPerDegree = 24600.0 / 360.0; // 68,3333333333333
+long homePosition1 = 0;
+long homePosition2 = 0;
+*/
+#define ENCODER_COUNTS_FULL_ROT 24600.0
+#define COUNTS_PER_DEGREE (ENCODER_COUNTS_FULL_ROT / 360.0)
+
+// ========================= SOFTWARE I2C SRF02 =========================
+//MySoftwareWire sw(10, 11);
+byte frontSensors[] = {0x78, 0x76, 0x7E};
+
+// ========================= FLIPPER CONTROL =========================
+//#include "flipper_control.h"
+
+// ========================= I2C HELPERS =========================
+//#include "i2c_helpers.h"
+
+// ========================= SRF02 READ =========================
+//#include "srf02.h"
+
+// ========================= SETUP =========================
+bool success;
+byte error = 10;
+unsigned long lastExecutedMillis = 0;
+unsigned long currentMillis = 10; //millis();
+uint8_t swcase = 0;
+byte motor_add[] = {MOTOR_A_ADDR, MOTOR_B_ADDR};
+byte regs[] = {DIR_REG, STATUS_REG, SPEED_REG, ACCEL_REG, TEMP_REG, CURR_REG, VERSION_REG};
+byte motor = 0;
+
+
+void setup() {
+    // Serial Setup
+    Serial.begin(9600);
+    while(!Serial){delay(10);}
+    Serial.println("Serial Ready ----------------------   ");
+    Wire.setSCL(1); Wire.setSDA(0);
+    success = true;
+    Serial.println("starte I2C");
+    //Wire.begin();
+    
+    //if(success){Serial.print("SRF-I2C set up");}else{Serial.print("PROBLEM: SRF-I2C set up");}
+    Serial.println(" ");
+    delay(10);
+
+
+}
+
+void setup1(){ // Core1: Motor control, QEI & Control loops
+
+
+}
+
+// ========================= LOOP =========================
+void loop() {
+    ///*
+    //Serial.print("TEST");
+    //delay(750); 
+    currentMillis = millis();
+    if (currentMillis - lastExecutedMillis >= 1000) 
+    {
+    lastExecutedMillis = currentMillis; // save the last executed time
+    //*/
+    for(int i=0; i<2; i++){
+    Serial.print(" Starting Motor-I2C: "); Serial.print("Talking to "); Serial.print(int(motor_add[i])); Serial.println(" Motor A/B {");
+    //Wire.begin(MOTOR_A_ADDR);
+    Wire.begin();
+    for(int ii=0; ii<7; ii++){
+    Wire.beginTransmission(motor_add[i]);
+    Wire.write(regs[ii]);
+    //error = 
+    Wire.endTransmission(true);
+    /*Serial.print(error);
+    switch (error) 
+    {case 1: Serial.println("Success"); break; case 2: Serial.println("Data too long"); break; case 3: Serial.println("NACK on transmit of address"); break; case 4: Serial.println("NACK on transmit of data"); break; case 5: Serial.println("Timeout"); break;}
+    */
+    Serial.print(" {Register: "); Serial.print(regs[ii]); Serial.print(", Value: ");
+
+    Wire.requestFrom(motor_add[i], 1);
+
+    if(Wire.available()){
+        Serial.print(Wire.read());
+    }else{
+        Serial.println(" ERROR ");
+    }
+    Wire.endTransmission();
+    Serial.print(" },");
+    }
+    Wire.end();
+    Serial.println(" ");
+    }
+    
+    /**/}
+    //*/
+}
+
+void loop1(){ // Core1: Motor control, QEI & Control loops
+    
+}
