@@ -1,0 +1,3 @@
+curl -o pico_2_w.zip "https://github.com/gowthambiraj/rpi-pico2w-kicad/archive/refs/heads/main.zip"
+Expand-Archive -Path .\example-repo.zip -DestinationPath .\HelloWorld
+

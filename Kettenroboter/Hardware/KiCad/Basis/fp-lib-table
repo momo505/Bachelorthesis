@@ -1,0 +1,4 @@
+(fp_lib_table
+  (version 7)
+  (lib (name "Library")(type "KiCad")(uri "D:/Github-Repositories/BA_HardwareDesign/Bachelorthesis/Kettenroboter/Hardware/KiCad/Bauteil-Library/Footprints/MyFootprintLibrary.pretty")(options "")(descr ""))
+)
