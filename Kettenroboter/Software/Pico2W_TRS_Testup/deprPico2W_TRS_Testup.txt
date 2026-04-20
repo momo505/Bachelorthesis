@@ -1,0 +1,140 @@
+#include <Wire.h>
+//#include <FreeRTOS.h>
+//#include "MySoftwareWire.h"
+
+// enable FreeRTOS SMP with Tools: Operating System: FreeRTOS SMP
+// compile with acli compile -j 0 -v -e -b rp2040:rp2040:rpipico2w
+// (in windows compile pio asm with pioasm.exe pio_code.pio pio_code.pio.h
+// find port: sudo dmesg | egrep -i --color 'ttyACM'
+// arduino-cli upload I2Csketch.ino -p /dev/ttyACM0 -b rp2040:rp2040:rpipico2w
+// serial: sudo screen /dev/ttyACM0 115200          (ctrl-d to detach)
+
+// ========================= MOTOR A/B CONFIG =========================
+//#include "motor_config.h"
+
+// ========================= MD03 CONFIG flipper 1 =========================
+//#include "md03_config.h"
+
+/*
+volatile long encoderCount1 = 0;
+volatile long encoderCount2 = 0;
+volatile long encoderCount1B = 0;
+volatile long encoderCount2B = 0;
+*/
+/*
+long targetAngle = 0;
+bool homed = false;
+const float countsPerDegree = 24600.0 / 360.0; // 68,3333333333333
+long homePosition1 = 0;
+long homePosition2 = 0;
+*/
+#define ENCODER_COUNTS_FULL_ROT 24600.0
+#define COUNTS_PER_DEGREE (ENCODER_COUNTS_FULL_ROT / 360.0)
+
+// ========================= SOFTWARE I2C SRF02 =========================
+//MySoftwareWire sw(10, 11);
+byte frontSensors[] = {0x78, 0x76, 0x7E};
+
+// ========================= FLIPPER CONTROL =========================
+//#include "flipper_control.h"
+
+// ========================= I2C HELPERS =========================
+//#include "i2c_helpers.h"
+
+// ========================= SRF02 READ =========================
+//#include "srf02.h"
+
+// ========================= SETUP =========================
+bool success;
+unsigned long lastExecutedMillis = 0;
+unsigned long currentMillis = 10; //millis();
+uint8_t swcase = 0;
+
+void setup() {
+    // Serial Setup
+    Serial.begin(9600);
+    while(!Serial){delay(10);}
+    Serial.println("Serial Ready ----------------------   ");
+    //success = Wire.setSCL(1) && Wire.setSDA(1);
+    success = true;
+    Serial.println("starte I2C");
+    //Wire.begin();
+    
+    //if(success){Serial.print("SRF-I2C set up");}else{Serial.print("PROBLEM: SRF-I2C set up");}
+    Serial.println(" ");
+    delay(10);
+
+
+}
+
+void setup1(){ // Core1: Motor control, QEI & Control loops
+
+
+}
+
+// ========================= LOOP =========================
+void loop() {
+    ///*
+    //Serial.print("TEST");
+    //delay(750); 
+    currentMillis = millis();
+    if (currentMillis - lastExecutedMillis >= 800) 
+    {
+    lastExecutedMillis = currentMillis; // save the last executed time
+    //*/
+
+    switch(swcase){
+    case 0:
+    for(int i=0; i<3; i++){
+
+    Serial.println(" -I2C-Comms- ");
+    Serial.print(" Starting with bus address "); Serial.print(i); Serial.print(" : "); Serial.println(frontSensors[i]);
+    //if(success){Serial.print("SRF-I2C set up");}else{Serial.print("PROBLEM: SRF-I2C set up");}
+    Serial.println(" ");
+    delay(10);
+
+    int answer = 0;
+    Serial.println(" Starting SRF dialog ");
+    Wire.begin(frontSensors[i]);
+    Serial.println(" began transaction ");
+    Wire.write(0x00); Wire.write(0x51); Wire.end();
+    Serial.print(" Wrote: "); Serial.print(0x00 + 48); Serial.print(" , "); Serial.print(0x51 + 48); 
+    delay(25);
+    delay(25);
+    delay(25);
+    Serial.println(" Requesting Values ");
+    Wire.begin(frontSensors[i]); Wire.write(0x02); Wire.end();
+    Serial.print("Requesting: "); Serial.println(Wire.requestFrom(frontSensors[i], 2));
+    uint8_t bytenumber = 0; bytenumber = Wire.available();
+    if(bytenumber >=2){
+        answer = Wire.read(); answer << 8; answer += Wire.read();
+        Serial.println(" SRF answer: "); Serial.println(answer + 48);
+    }else if(bytenumber > 0){
+        answer = Wire.read();
+        Serial.println(" SRF answer: "); Serial.println(answer + 48);
+    }else{
+        Serial.println("PROBLEM: SRF not answering");
+    }
+    Wire.end();
+    bytenumber = 0;
+
+    Serial.print("TLDR: bus adress ");Serial.print(i);Serial.print(" - ");Serial.print(frontSensors[i]);Serial.print(" did ");
+    if(answer != 0){Serial.println(" respond :) ");}else{Serial.print(" not respond ");}
+    }
+    Serial.println(" I2C end ");
+    delay(25);
+
+    case 1:
+
+    Serial.println(" case 1 ");
+
+
+
+    }
+    /**/}
+    //*/
+}
+
+void loop1(){ // Core1: Motor control, QEI & Control loops
+    
+}

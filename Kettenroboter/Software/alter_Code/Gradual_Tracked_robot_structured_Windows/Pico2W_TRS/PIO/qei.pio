@@ -1,0 +1,44 @@
+.program pio_qei
+.pio_version 1 ; newer version (RP2350)
+.clock_div 150
+.fifo rx ; no txfifo needed -> only larger rxfifo used
+.origin 0
+.wrap_target
+mov PC, pins
+jmp pos_edge
+jmp neg_edge
+jmp perform_op
+
+pos_edge:
+set x, 1
+mov PC, pins
+
+neg_edge:
+set x, 0
+mov PC, pins
+
+perform_op:
+jmp !X, decrement
+mov Y, ~Y
+jmp Y--, continue_increment
+continue_increment:
+mov Y, ~Y
+jmp write_rx
+decrement:
+jmp Y--, write_rx
+
+write_rx:
+mov ISR, Y
+push noblock
+
+wait_on_zeros:
+wait 0 pin 0
+wait 0 pin 1
+
+.wrap
+
+% c-sdk {
+static inline void pio_qei_init(PIO pio, uint sm, uint offset, uint pin){
+	pio_sm_config c = pio_qei_get_default_config(offset);
+}
+%}

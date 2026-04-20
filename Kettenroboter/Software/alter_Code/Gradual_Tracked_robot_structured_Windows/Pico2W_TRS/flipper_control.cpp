@@ -5,16 +5,16 @@
 #include "i2c_helpers.h"
 // ========================= FLIPPER CONTROL =========================
 
-encoderCount1 = 0;
-encoderCount2 = 0;
-encoderCount1B = 0;
-encoderCount2B = 0;
+volatile long encoderCount1 = 0;
+volatile long encoderCount2 = 0;
+volatile long encoderCount1B = 0;
+volatile long encoderCount2B = 0;
 
-targetAngle = 0;
-//homed = false;
-//countsPerDegree = 24600.0 / 360.0; // 68,3333333333333
-homePosition1 = 0;
-homePosition2 = 0;
+long targetAngle = 0;
+bool homed = false;
+const float countsPerDegree = 24600.0 / 360.0; // 68,3333333333333
+long homePosition1 = 0;
+long homePosition2 = 0;
 
 void moveForward() {
     digitalWrite(brakePin, HIGH);
@@ -32,7 +32,8 @@ void moveBackward() {
     digitalWrite(brakePin2, HIGH);
     writeI2C(MD03_ADDR, SPEED_REG, 50);
     writeI2C(MD03_ADDR2, SPEED_REG, 50);
-    delay(5); writeI2C(MD03_ADDR, CMD_REG, CMD_REVERSE);
+    delay(5); 
+    writeI2C(MD03_ADDR, CMD_REG, CMD_REVERSE);
     writeI2C(MD03_ADDR2, CMD_REG, CMD_REVERSE);
     delay(5);
 }
