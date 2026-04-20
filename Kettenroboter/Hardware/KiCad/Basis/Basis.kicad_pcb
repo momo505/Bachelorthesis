@@ -4168,7 +4168,7 @@
 				)
 			)
 		)
-		(property "Value" "R"
+		(property "Value" "10k"
 			(at 0 1.83 90)
 			(layer "F.Fab")
 			(uuid "c6db1185-7c91-42f9-82ee-d6e56bf270c4")
@@ -6963,7 +6963,7 @@
 				)
 			)
 		)
-		(property "Value" "R"
+		(property "Value" "10k"
 			(at 0 1.83 90)
 			(layer "F.Fab")
 			(uuid "ce99c365-0938-4222-9f4d-2fe844b7f276")
@@ -7560,7 +7560,7 @@
 				)
 			)
 		)
-		(property "Value" "R"
+		(property "Value" "1k"
 			(at 0 1.83 90)
 			(layer "F.Fab")
 			(uuid "f89243ce-ba76-4320-878d-c8c461c25ea0")
@@ -8801,7 +8801,7 @@
 				)
 			)
 		)
-		(property "Value" "C"
+		(property "Value" "1n"
 			(at 0 1.85 90)
 			(layer "F.Fab")
 			(uuid "3f16af71-24ed-4628-8c31-9876000b90d7")
@@ -8942,7 +8942,7 @@
 				)
 			)
 		)
-		(property "Value" "R"
+		(property "Value" "10k"
 			(at 0 1.83 90)
 			(layer "F.Fab")
 			(uuid "e26518ec-9045-4cb5-9c79-3fffe0144f61")
@@ -12968,7 +12968,7 @@
 			)
 		)
 		(property ki_fp_filters "SOIC*3.9x8.7mm*P1.27mm* TSSOP*4.4x5mm*P0.65mm* DIP*W7.62mm*")
-		(path "/7b005150-4c8c-4efa-8596-479ab1c6716e")
+		(path "/860bc827-b08d-410f-81bc-4fa0d8c97571")
 		(sheetname "/")
 		(sheetfile "Basis.kicad_sch")
 		(attr smd)
@@ -13255,7 +13255,7 @@
 				)
 			)
 		)
-		(property "Value" "C"
+		(property "Value" "1n"
 			(at 0 1.85 90)
 			(layer "F.Fab")
 			(uuid "12185f05-9c03-4ded-8e3a-0206d98cc32f")
@@ -13396,7 +13396,7 @@
 				)
 			)
 		)
-		(property "Value" "R"
+		(property "Value" "1k"
 			(at 0 1.83 90)
 			(layer "F.Fab")
 			(uuid "1f74a67c-e078-495b-be98-1ab0bfc4051a")
@@ -13767,7 +13767,7 @@
 		(property "Reference" "D4"
 			(at 5.064 -2.032 90)
 			(layer "F.SilkS")
-			(uuid "913ee660-6160-4da1-9fc1-5521e472a25e")
+			(uuid "ff200405-2c73-45c3-ad92-61516d7bb80d")
 			(effects
 				(font
 					(size 1 1)
@@ -13778,7 +13778,7 @@
 		(property "Value" "D"
 			(at 3.81 5.12 90)
 			(layer "F.Fab")
-			(uuid "80e78ff2-688d-4cce-8bc2-9099fec9efb9")
+			(uuid "6543b67c-7a32-4074-a0dc-a4191a1cd01d")
 			(effects
 				(font
 					(size 1 1)
@@ -13790,7 +13790,7 @@
 			(at 0 0 90)
 			(layer "F.Fab")
 			(hide yes)
-			(uuid "47f54e96-2fc6-43a4-9638-260495d3b595")
+			(uuid "f15da155-6b62-4216-8344-7f97493d8626")
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -13802,7 +13802,7 @@
 			(at 0 0 90)
 			(layer "F.Fab")
 			(hide yes)
-			(uuid "050fb9eb-e85d-492a-97d0-34a97894dd25")
+			(uuid "f5e9602a-e33f-4982-823c-ecd6773cbc26")
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -14342,7 +14342,7 @@
 				)
 			)
 		)
-		(property "Value" "R"
+		(property "Value" "1k"
 			(at 0 1.83 0)
 			(layer "F.Fab")
 			(uuid "08834680-5065-4252-8cd7-df80257f5920")
@@ -14939,7 +14939,7 @@
 				)
 			)
 		)
-		(property "Value" "R"
+		(property "Value" "1k"
 			(at 0 1.83 0)
 			(layer "F.Fab")
 			(uuid "9e376291-99bf-4790-bd5b-85e8e7df7d2a")
@@ -17475,7 +17475,7 @@
 				)
 			)
 		)
-		(property "Value" "R"
+		(property "Value" "720"
 			(at 0 0 90)
 			(layer "F.Fab")
 			(uuid "efddbc02-db0c-4741-9e03-84ecfc20950f")
@@ -18967,7 +18967,7 @@
 				)
 			)
 		)
-		(property "Value" "R"
+		(property "Value" "1k"
 			(at 0 1.83 90)
 			(layer "F.Fab")
 			(uuid "47b3a08a-5588-476f-af5e-13bd95a2e07b")
@@ -19108,7 +19108,7 @@
 				)
 			)
 		)
-		(property "Value" "C"
+		(property "Value" "1n"
 			(at 0 0 90)
 			(layer "F.Fab")
 			(uuid "10e046da-e670-4a24-b0ce-d9a6ea27ef12")
@@ -19249,7 +19249,7 @@
 				)
 			)
 		)
-		(property "Value" "C"
+		(property "Value" "1n"
 			(at 0 1.85 90)
 			(layer "F.Fab")
 			(uuid "68483ab8-c1a8-4f52-b849-f4f8c78fe266")
@@ -21316,7 +21316,7 @@
 				)
 			)
 		)
-		(property "Value" "C"
+		(property "Value" "1n"
 			(at 0 1.85 90)
 			(layer "F.Fab")
 			(uuid "eeee4b75-49ce-485e-9f25-f237892ff985")
@@ -27686,7 +27686,7 @@
 				)
 			)
 		)
-		(property "Value" "R"
+		(property "Value" "1.3k"
 			(at 0 1.83 0)
 			(layer "F.Fab")
 			(uuid "2c7a1ce1-d957-4638-a01f-8f2289bca54b")
@@ -28109,7 +28109,7 @@
 				)
 			)
 		)
-		(property "Value" "R"
+		(property "Value" "1k"
 			(at 0 2.54 90)
 			(layer "F.Fab")
 			(uuid "2cf9d184-4299-4ec5-b387-dde9357b8c3b")
@@ -28250,7 +28250,7 @@
 				)
 			)
 		)
-		(property "Value" "R"
+		(property "Value" "1,3K"
 			(at 0 1.83 0)
 			(layer "F.Fab")
 			(uuid "8cc61890-d5d2-422c-9f37-cdda7ea87694")
@@ -30811,7 +30811,7 @@
 				)
 			)
 		)
-		(property "Value" "R"
+		(property "Value" "720"
 			(at 0 0 90)
 			(layer "F.Fab")
 			(uuid "3e5dfcfb-bc7d-4c06-a6c8-5f7c560003c8")
