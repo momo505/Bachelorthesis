@@ -1,0 +1,69 @@
+.program qei
+.pio_version 1 ; newer version (RP2350)
+;.clock_div 150
+.fifo rx ; no txfifo needed -> only larger rxfifo used
+
+.origin 0
+.wrap_target
+mov PC, pins
+jmp pos_edge
+jmp neg_edge
+jmp perform_op
+
+pos_edge:
+set x, 1
+mov PC, pins
+
+neg_edge:
+set x, 0
+mov PC, pins
+
+perform_op:
+jmp !X, decrement
+mov Y, ~Y
+jmp Y--, continue_increment
+continue_increment:
+mov Y, ~Y
+jmp write_rx
+decrement:
+jmp Y--, write_rx
+
+write_rx:
+mov ISR, Y
+push noblock
+
+wait_on_zeros:
+wait 0 pin 0
+wait 0 pin 1
+
+.wrap
+
+% c-sdk {
+// Helper function (for use in C program) to initialize this PIO program
+static inline void pio_qei_init(PIO pio, uint sm, uint offset, uint pin, float div){
+	pio_sm_config c = qei_program_get_default_config(offset);
+	}
+
+// Helper function (for use in C program) to initialize this PIO program
+void qei_init(PIO pio, uint sm, uint offset, uint pin, float div) {
+
+    // Sets up state machine and wrap target. This function is automatically
+    // generated in blink.pio.h.
+    pio_sm_config c = qei_program_get_default_config(offset);
+
+    // Allow PIO to control GPIO pin (as output)
+    //pio_gpio_init(pio, pin); //for input unnecessary
+
+    // Connect pin to SET pin (control with 'set' instruction)
+    //sm_config_set_set_pins(&c, pin, 2);
+
+    // Set the pin direction to output (in PIO)
+    pio_sm_set_consecutive_pindirs(pio, sm, pin, 2, false);
+    
+    // Set the clock divider for the state machine
+    sm_config_set_clkdiv(&c, div);
+
+    // Load configuration and jump to start of the program
+    pio_sm_init(pio, sm, offset, &c);
+}
+%}

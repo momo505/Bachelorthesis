@@ -1,6 +1,6 @@
 #include "icc.h"
 #include "Arduino.h"
-
+#include "pico/mutex.h"
 /*
 #include <FreeRTOS.h>
 #include "semphr.h"
@@ -24,7 +24,6 @@ void mutexGive(SemaphoreHandle_t mutex){
 }
 */
 
-#include "pico/mutex.h"
 
 void initMutex(mutex_t *mutex){
 	mutex_init(mutex);

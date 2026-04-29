@@ -1,5 +1,7 @@
 #ifndef ICC_H
 #define ICC_H
+
+#include "pico/mutex.h"
 /*
 #include <FreeRTOS.h>
 #include "semphr.h"
@@ -10,7 +12,6 @@ bool mutexTake(SemaphoreHandle_t mutex);
 
 void mutexGive(SemaphoreHandle_t mutex);
 */
-#include "pico/mutex.h"
 
 void initMutex(mutex_t *mutex);
 
