@@ -5,7 +5,7 @@
 #define I2C0_SCL 1
 
 #define I2C1_SDA 2
-#define I2C1_SDA 3
+#define I2C1_SCL 3
 
 #define DIO_1 4
 #define DIO_2 5

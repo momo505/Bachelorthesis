@@ -1,6 +1,6 @@
 .program qei
 .pio_version 1 ; newer version (RP2350)
-;.clock_div 150
+;.clock_div 5
 .fifo rx ; no txfifo needed -> only larger rxfifo used
 
 .origin 0
@@ -50,15 +50,27 @@ void qei_init(PIO pio, uint sm, uint offset, uint pin, float div) {
     // Sets up state machine and wrap target. This function is automatically
     // generated in blink.pio.h.
     pio_sm_config c = qei_program_get_default_config(offset);
-
+	
     // Allow PIO to control GPIO pin (as output)
-    //pio_gpio_init(pio, pin); //for input unnecessary
+    pio_gpio_init(pio, pin); //for input unnecessary
+	pio_gpio_init(pio, pin+1);
+	
+	// Set Pullups:
+	//gpio_pull_up(pin);
+	//gpio_pull_up(pin+1);
 
     // Connect pin to SET pin (control with 'set' instruction)
     //sm_config_set_set_pins(&c, pin, 2);
 
-    // Set the pin direction to output (in PIO)
+    // Set the pin direction to input (in PIO)
     pio_sm_set_consecutive_pindirs(pio, sm, pin, 2, false);
+	
+	//Zuweisung der "IN"-Basis-Pins, zuletzt geändert
+	// Set input pins 
+	sm_config_set_in_pins(&c, pin);
+	
+	// Set input pin number (necessary for mov pc)
+	sm_config_set_in_pin_count(&c, 2);
     
     // Set the clock divider for the state machine
     sm_config_set_clkdiv(&c, div);
