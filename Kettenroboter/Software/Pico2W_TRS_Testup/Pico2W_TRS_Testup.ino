@@ -48,10 +48,18 @@ const byte Sensors[] = {0x78, 0x76, 0x7E, 0x70, 0x71};
 //#include "srf02.h"
 
 // ========================= PIO-QEI =========================
+/*
 #include "hardware/pio.h"
 #include "pio_qei.h"
 const int pio_pin = 15;
 const float pio_freq = 2500;
+*/
+
+// ========================= Pico-QEI =========================
+// https://github.com/pmarques-dev/PicoEncoder
+#include <PicoEncoder.h>
+PicoEncoder Encoder_LD;
+PicoEncoder Encoder_RD;
 
 // ========================= PID =========================
 #include "PID.h"
@@ -152,12 +160,13 @@ void setup() {
         mutexGive(&pb_mutex);
     }
 
-    // PIO-Setup
+    /* PIO-Setup 
     if(pio_qei_setup(15, 2500)){
         Serial.println(" PIO-Setup successfull");
     }else{
         Serial.println(" ! PIO-ERROR ! ");
     };
+    */
 
     // Initialize a queue to hold up to 10 MotorData structs
     queue_init(&motor_queue, sizeof(MotorData), 10);
@@ -212,9 +221,12 @@ void setupCore1(){ // Core1: Motor control, QEI & Control loops
                 if(singlecore == true){Serial.println(); Serial.print("ERROR: Wire0 device 0x "); Serial.print(Sensors[j], HEX); Serial.println(" not showing ");}
             }
     }
-    if(singlecore == true){Serial.println();}
 
-    
+    // Pico-QEI Setup
+    Encoder_LD.begin(QEI0_A);
+    Encoder_RD.begin(QEI1_A);
+
+    if(singlecore == true){Serial.println();}
 
     digitalWrite(LED_BUILTIN, LOW);
 }
@@ -342,6 +354,22 @@ void loopCore1(){ // Core1: Motor control, QEI & Control loops
     if ((c1_currentMillis - c1_lastExecutedMillis >= 300)  || (singlecore==true) /* */) {
     c1_lastExecutedMillis = c1_currentMillis; // save the last executed time
     c1_current_micros = micros();
+
+    //Pico-QEI:
+    Encoder_LD.update();
+    Encoder_RD.update();
+    if(singlecore){
+        Serial.println(" ");
+        Serial.print(" LD Position: ");
+        Serial.print(Encoder_LD.position);
+        Serial.print(", LD step: ");
+        Serial.print(Encoder_LD.step);
+        Serial.print(", RD Position: ");
+        Serial.print(Encoder_RD.position);
+        Serial.print(", RD step: ");
+        Serial.println(Encoder_RD.step);
+    }
+
 
     digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
     for(int j=0; j<4; j++){
