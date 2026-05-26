@@ -1,5 +1,5 @@
 #include "sample.h"
-#include <SPI.h>
+//include <SPI.h>
 #include "Arduino.h"
 
 void helloWorld(){
