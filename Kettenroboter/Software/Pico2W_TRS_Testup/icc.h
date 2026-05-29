@@ -17,6 +17,8 @@ void initMutex(mutex_t *mutex);
 
 bool mutexTake(mutex_t *mutex, uint32_t *owner);
 
+void mutexTake_blocking(mutex_t *mutex, uint32_t *owner);
+
 void mutexGive(mutex_t *mutex);
 
 #endif

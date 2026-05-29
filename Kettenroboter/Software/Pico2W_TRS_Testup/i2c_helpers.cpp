@@ -32,7 +32,7 @@ bool wireCheckAdressPresent(TwoWire* inter, byte addr, byte safereg){
     inter->beginTransmission(addr);
     inter->write(safereg);
     if(inter->endTransmission(true) == 0){
-        inter->requestFrom(addr, 1);
+        //inter->requestFrom(addr, 1);
         return true;
     };
     return false;
@@ -41,7 +41,7 @@ bool wireCheckAdressPresent(TwoWire* inter, byte addr, byte safereg){
 bool wireCheckPresence(TwoWire &Bus, byte addr){
     Bus.beginTransmission(addr);
     // 0 bedeutet Erfolg (ACK), alles andere ist ein Fehler (NACK) -> mehrere mögliche Fehlercodes
-    byte error = Bus.endTransmission(addr);
+    byte error = Bus.endTransmission(true);
     if(error == 0){
         return true;
     }else{

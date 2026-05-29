@@ -7,8 +7,6 @@ class PID{
 		bool constrain_output;
 		float calculate_out(float e_new, float timediff);
 		void set_parameters(float k_p, float k_i, float k_d);
-		
-		
 	private: // alles floats
 		float e_last;
 		float k_i;
@@ -18,5 +16,6 @@ class PID{
 		float y;
 		float y_constrained; 
 		const float max_v = FLT_MAX;
+		const float min_v = FLT_MIN;
 };
 #endif

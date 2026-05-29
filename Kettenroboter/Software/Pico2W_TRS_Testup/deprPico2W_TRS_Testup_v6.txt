@@ -63,17 +63,6 @@ PicoEncoder Encoder_RD;
 
 // ========================= PID =========================
 #include "PID.h"
-#include "PID_config.h"
-PID LD_Controller(false);
-PID RD_Controller(false);
-
-byte float_to_byte(float in) {
-    // Clamp between 0 and 255
-    if (in < 0) return 0;
-    if (in > 255) return 255;
-    return (byte)in;
-}
-
 
 // ========================= MCP2515-CAN =========================
 
@@ -97,7 +86,8 @@ enum command_t {
     set_flag_and,
     set_flag_xor,
     set_motor_speed,
-    motors_connected
+    
+
 };
 
 union fifo_command_t{
@@ -105,11 +95,11 @@ union fifo_command_t{
     command_t command;
 };
 
-const char input_chars[] = 		    {'s',       'f',			'b',			'l',		'r',	    'n',	'm',        '1',        '2'}; //original f b l r s
-const command_t char_meaning[] = 	{stop,      forward,	    backward,	    left,	    right,	    none,   manual,     test_1,      test_2};
+const char input_chars[] = 		    {'s',       'f',			'b',			'l',		'r',		'n',	'm',        '1',        '2'}; //original f b l r s
+const command_t char_meaning[] = 	{stop,      forward,	    backward,	    left,	    right,	    none,   manual,     test_1,    test_2};
 
 
-//const fifo_command_t char_dict[];
+const fifo_command_t char_dict[];
 
 const union fifo_command_t char_dict[] = {{.command = stop},{.command = forward},{.command = backward},{.command = left},{.command = right},{.command = none},{.command = manual},{.command = test_1},{.command = test_2}
 };
@@ -160,36 +150,23 @@ MySerialUSB MySerial(1);
 // SINGLECORE-MODE (runs both loops sequentially on core0)
 const bool singlecore = false;
 
+
 const bool request_queue_output = true;
 
 // Serielle Schnittstelle (choose which Core the seriel port gets connected to)
 const bool core0_serial = true;
-
 // ========================= SETUP =========================
-//Flagge auf Core 1
-uint32_t c1_control_flag = (C1_MOVEMENT_ALLOWED); // | C1_GATHER_MOTORDATA);
-
-uint rd_step, ld_step; // Steps des linken & Rechten Antriebsmotors
-int r_position, l_position;
-byte ld_speed_target, rd_speed_target = 0x0F; //0;
-byte ld_speed_output, rd_speed_output = 0;
-byte rd_curr_speed, ld_curr_speed = 0;
-
 bool success;
 byte error = 10;
 unsigned long c0_lastExecutedMillis, c1_lastExecutedMillis = 0;
-unsigned long c0_currentMillis, c1_currentMillis = 10; // millis();
-long unsigned int controller_timestamp = 1000;
-long unsigned int controller_last_timestamp = 0;
-
+unsigned long c0_currentMillis, c1_currentMillis = 10; //millis();
 uint8_t swcase = 0;
 byte motor_add[] = {MOTOR_L_ADDR, MOTOR_B_ADDR, MD03_ADDR2, MD03_ADDR};
 byte regs[] = {DIR_REG, STATUS_REG, SPEED_REG, ACCEL_REG, TEMP_REG, CURR_REG, VERSION_REG};
 byte motor = 0;
 bool can_available = false;
-bool printvalues = false;
+bool printvalues = true;
 //message_t message = stop;
-bool motor_connected = false;
 char serialread;
 
 unsigned long c0_current_micros, c1_current_micros, c0_cycletime, c1_cycletime, ct_buf = 0;
@@ -201,9 +178,12 @@ bool sensor_presence[5] = {false};
 
 bool test;
 
-fifo_command_t testcommand = {.command = manual};
+//fifo_command_t testcommand;
+//testcommand.command = manual;
+fifo_command_t testcommand = { .command = manual };
 
 void setup() {
+
     // Serial Setup
     MySerial.begin(1000000);
     while(!Serial){delay(10);}
@@ -272,28 +252,28 @@ void setupCore1(){ // Core1: Motor control, QEI & Control loops
     while(!Serial){delay(10);}
     MySerial.println("Serial Ready ----------------------   ");
 
-    
-    if(Wire.setSCL(I2C0_SCL) && Wire.setSDA(I2C0_SDA)){MySerial.println("starting Motor-I2C");}
+    /*
+    success = Wire.setSCL(1) && Wire.setSDA(0);
+
+    // Initialisierung Motor Bus
+    if(Wire.setSCL(I2C0_SCL) && Wire.setSDA(I2C0_SDA)){
+        Wire.setTimeout(10, true);
+        Wire.setClock(1000);
+    }
+    //*/
+    MySerial.println("starting Motor-I2C");
     Wire.begin();
     for(int j=0; j<4; j++){
         if(wireCheckPresence(Wire, motor_add[j])){
-            MySerial.print(" | Found device on Wire0 : 0x"); MySerial.print(Sensors[j], HEX);
-            motor_connected = true;
-        }else{
-            MySerial.println(); MySerial.print("ERROR: Wire0 device 0x "); MySerial.print(Sensors[j], HEX); MySerial.println(" not showing ");
-            motor_connected = false;
-        }
+                MySerial.print(" | Found device on Wire0 : 0x"); MySerial.print(Sensors[j], HEX);
+            }else{
+                MySerial.println(); MySerial.print("ERROR: Wire0 device 0x "); MySerial.print(Sensors[j], HEX); MySerial.println(" not showing ");
+            }
     }
 
     // Pico-QEI Setup
     Encoder_LD.begin(QEI0_A);
     Encoder_RD.begin(QEI1_A);
-
-    // PID Setup
-    LD_Controller.set_parameters(Kp, Ki, Kd);
-    LD_Controller.set_parameters(Kp, Ki, Kd);
-    //LD_Controller.calculate_out(float e_new, float timediff);
-    //LD_Controller.calculate_out(float e_new, float timediff);
 
     if(singlecore == true){MySerial.println();}
 
@@ -304,6 +284,7 @@ void setup1(){ if(singlecore==false){setupCore1();}}
 
 // ========================= LOOP =========================
 void loop() {
+
     c0_currentMillis = millis();
     if (c0_currentMillis - c0_lastExecutedMillis >= 471){
     c0_lastExecutedMillis = c0_currentMillis; // save the last executed time
@@ -366,13 +347,74 @@ void loop() {
         MySerial.println("QUEUE: no output");
     }
 
+
+
+
+    
+    // CAN-Comms:
+    
     // Serial Input
+    /*
+    Serial.println("SERIAL INPUT:");
+    for(int i=Serial.available(); i>0; i--){
+        serialread = Serial.read();
+        Serial.print(" Recieved char: "); Serial.print(serialread); Serial.print(" "); Serial.print((uint8_t)serialread); Serial.print(" ");
+        command_t message;
+        if(((uint8_t)serialread < 48) || ((uint8_t)serialread) > 126){
+            Serial.println(" No accepted character");
+            }else{
+            for(int ii = 0; ii < (sizeof(input_chars)/sizeof(char)); ii++){
+				if(serialread == input_chars[ii]){
+					Serial.print("recieved command "); Serial.println(input_chars[ii]);
+                    rp2040.fifo.push_nb(char_meaning[ii]);
+				}else{
+                    if(ii == (sizeof(input_chars)/sizeof(char))-1){
+					    Serial.print("! Serial Read ERROR, could not parse !");
+                    }
+				}
+            /*
+            switch (serialread){  //original f b l r s
+                case 'f':
+                    Serial.println("recieved command f");
+                    message = forward;
+                    rp2040.fifo.push_nb(message);
+                    break;
+                case 'b':
+                    Serial.println("recieved command b");
+                    message = backward;
+                    rp2040.fifo.push_nb(message);
+                    break;
+                case 'l':
+                    Serial.println("recieved command l");
+                    message = left;
+                    rp2040.fifo.push_nb(message);
+                    break;
+                case 'r':
+                    Serial.println("recieved command r");
+                    message = right;
+                    rp2040.fifo.push_nb(message);
+                    break;
+                case 's':
+                    Serial.println("recieved command s");
+                    message = stop;
+                    rp2040.fifo.push_nb(message);
+                    break;
+                case NULL: //0x0 ?
+                    Serial.println("(No Input)");
+                default:
+                    Serial.println("! Serial Read ERROR, could not parse");
+                    break;
+            //
+            }
+        }
+    }
+    //*/
     MySerial.println("MySerial INPUT:");
     while (MySerial.available() > 0) {
-        int serialread = MySerial.read();
+        int Serialread = MySerial.read();
     
         // Prüfe auf gültigen Bereich
-        if (serialread < 48 || serialread > 126) {
+        if (Serialread < 48 || Serialread > 126) {
             MySerial.print(" No accepted character: "); MySerial.println(serialread);
             continue;
         }
@@ -391,19 +433,10 @@ void loop() {
         }
 
         if (!found) {
-            switch(serialread){
-                case 'x':
-                    rp2040.reboot();
-                    break;
-                default:
-                    break;
-            }
-        }else{
             MySerial.print("! Serial Read ERROR: "); 
             MySerial.print((char)serialread);
             MySerial.println(" could not parse !");
         }
-    
     }
     // Test:
     rp2040.fifo.push_nb(testcommand.uint32);
@@ -414,6 +447,8 @@ void loop() {
             uint32_t uint32;
             command_t command;
         } recieved2;
+
+        //uint32_t* pointer;
 
         //command_t recieved;
         rp2040.fifo.pop_nb(&recieved2.uint32);
@@ -427,10 +462,14 @@ void loop() {
                     MySerial.println("acknowledged command backward");
                     break;
                 default:
-                    //MySerial.print("ERROR, not understood "); MySerial.print(recieved2.command); MySerial.print(" , "); MySerial.println(recieved2.uint32);
+                    MySerial.print("ERROR, could not parse"); MySerial.print(recieved2.command); MySerial.print(" , "); MySerial.println(recieved2.uint32);
                     break;
         }
     }
+
+
+
+
 
     MySerial.println("loop0 finished");
 
@@ -448,22 +487,11 @@ void loopCore1(){ // Core1: Motor control, QEI & Control loops
     c1_current_micros = micros();
 
     // Read newest flag values 
-    if(c1_control_flag || 0xf /*checkt alle unter 8 bits*/){
-        // Notstoproutine (noch zu ergänzen)
-    }
-
-    //
-    controller_last_timestamp = controller_timestamp;  
-    controller_timestamp = millis();
-
-
 
     //Pico-QEI:
     MySerial.print("Pico-QEI:");
     Encoder_LD.update();
     Encoder_RD.update();
-    ld_step = Encoder_LD.step;
-    rd_step = Encoder_RD.step;
     MySerial.println(" ");
     MySerial.print(" LD Position: ");
     MySerial.print(Encoder_LD.position);
@@ -501,41 +529,83 @@ void loopCore1(){ // Core1: Motor control, QEI & Control loops
     //*/
     
     // Read Motor Sensors
+    /*
+    digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
+    for(int j=0; j<4; j++){
+    //Wire.begin();
+    for(int jj=0; jj<7; jj++){
+    Wire.beginTransmission(motor_add[j]);
+    delay(1);
+    Wire.write(regs[jj]);
+    Wire.endTransmission(true);
+    /*
+    error = false;
+    // Wenn der Bus sich aufhängt oder der Slave NACKt
+            if(error != 0){
+                Wire.end();        // Hardware-I2C deinitialisieren
+                delay(100);
+                Wire.begin();      // Hardware-I2C neu starten
+                //Wire.setTimeout(100); 
+                Wire.setTimeout(10, true);
+                delay(200);
+                i2c_flag = true;
+                continue;          // Versuch für dieses Register überspringen
+            }
+    //*/
+    /*Serial.print(error);
+    switch (error) 
+    {case 1: Serial.println("Success"); break; case 2: Serial.println("Data too long"); break; case 3: Serial.println("NACK on transmit of address"); break; case 4: Serial.println("NACK on transmit of data"); break; case 5: Serial.println("Timeout"); break;}
+    */
+    /*
+    Wire.requestFrom(motor_add[j], 1); //Vollständige Transaktion kein begin / end nötig
+
+    if(Wire.available()){
+        motor_c1_readvalues[j][jj] = Wire.read();
+    }
+    /*
+    if(jj>=6){
+        Wire.endTransmission(true);
+    }else{
+        Wire.endTransmission(false);
+    }
+    */
+    //}
+    //Wire.end();
+    //}
     //Geminis Vorschlag:
     // Read Motor Sensors
     digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN)); 
-    if(c1_control_flag || C1_GATHER_MOTORDATA){
-        for (int j = 0; j < 4; j++) {
-            for (int jj = 0; jj < 7; jj++) {
-        
-            // 1. Registeradresse schreiben
-            Wire.beginTransmission(motor_add[j]);
-            Wire.write(regs[jj]);
-            byte transmission_error = Wire.endTransmission(false); // RESTART anfordern
-            transmission_error = 1; //
-            // Fehlerbehandlung beim Schreiben
-            if (transmission_error != 0) {
-                // Reset des Busses bei schwerem Fehler
-                Wire.end();
-                delay(10);
-                Wire.begin();
-                Wire.setTimeout(10, true);
-                i2c_flag = true;
-                continue; // Nächstes Register versuchen
-            }  
 
-            // 2. Daten anfordern
-            byte bytesReceived = Wire.requestFrom(motor_add[j], (byte)1);
+    for (int j = 0; j < 4; j++) {
+        for (int jj = 0; jj < 7; jj++) {
         
-            if (bytesReceived > 0 && Wire.available()) {
-                motor_c1_readvalues[j][jj] = Wire.read();
-            } else {
-                // Device hat nicht geantwortet
-                motor_c1_readvalues[j][jj] = 0;
-            } 
-            }
+        // 1. Registeradresse schreiben
+        Wire.beginTransmission(motor_add[j]);
+        Wire.write(regs[jj]);
+        byte transmission_error = Wire.endTransmission(false); // RESTART anfordern
+
+        // Fehlerbehandlung beim Schreiben
+        if (transmission_error != 0) {
+            // Reset des Busses bei schwerem Fehler
+            Wire.end();
+            delay(10);
+            Wire.begin();
+            Wire.setTimeout(10, true);
+            i2c_flag = true;
+            continue; // Nächstes Register versuchen
+        }
+
+        // 2. Daten anfordern
+        byte bytesReceived = Wire.requestFrom(motor_add[j], (byte)1);
+        
+        if (bytesReceived > 0 && Wire.available()) {
+            motor_c1_readvalues[j][jj] = Wire.read();
+        } else {
+            // Device hat nicht geantwortet
+            motor_c1_readvalues[j][jj] = 0; 
         }
     }
+}
     
     // Queue-Exchange:
     for(int j=0; j<2; j++){
@@ -545,6 +615,7 @@ void loopCore1(){ // Core1: Motor control, QEI & Control loops
     }
     // Non-blocking add to the queue
     queue_try_add(&motor_queue, &C1_Motor_Data); 
+
 
     // Postbox-Exchange:
     // Mutex sperren (z. B. xSemaphoreTake / mutex_enter_blocking)
@@ -566,12 +637,9 @@ void loopCore1(){ // Core1: Motor control, QEI & Control loops
     }
 
     // Control Loops:
-    ld_speed_output = float_to_byte(LD_Controller.calculate_out((float)(ld_curr_speed-ld_speed_target), (float)(controller_last_timestamp - controller_timestamp)));
-    rd_speed_output = float_to_byte(RD_Controller.calculate_out((float)(rd_curr_speed-rd_speed_target), (float)(controller_last_timestamp - controller_timestamp)));
-    MySerial.print("Controller Output: ld out: "); MySerial.print(ld_speed_output); MySerial.print(", rd out: "); MySerial.println(rd_speed_output);
 
     // Send Motor Commands:
-    for(int i = 0; i < 1; i++){ 
+    for(int i = 0; i < 1; i++){
         Wire.beginTransmission(MOTOR_L_ADDR);
         Wire.write(DIR_REG);
         Wire.write(0x01);

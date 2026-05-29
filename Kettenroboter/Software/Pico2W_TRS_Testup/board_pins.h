@@ -9,7 +9,7 @@
 
 #define DIO_1 4
 #define DIO_2 5
-#define DIO_3 5
+#define DIO_3 6
 
 #define QEI0_A 7
 #define QEI0_B 8

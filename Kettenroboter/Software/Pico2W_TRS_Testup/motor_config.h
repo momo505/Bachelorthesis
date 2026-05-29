@@ -2,8 +2,8 @@
 #define MOTOR_CONFIG
 
 // ========================= MOTOR A/B CONFIG =========================
-#define MOTOR_A_ADDR 0x5A
-#define MOTOR_B_ADDR 0x5B
+#define MOTOR_L_ADDR 0x5A // Antriebsmotor 
+#define MOTOR_B_ADDR 0x5B // Antriebsmotor
 
 #define DIR_REG 0x00
 #define STATUS_REG 0x01

@@ -38,6 +38,11 @@ bool mutexTake(mutex_t  *mutex, uint32_t *owner){
 	}
 }
 
+void mutexTake_blocking(mutex_t  *mutex, uint32_t *owner){
+	while(!mutex_try_enter(mutex, owner)){ };
+	//mutex_enter_blocking(mutex)
+}
+
 void mutexGive(mutex_t *mutex){
 	mutex_exit(mutex);
 }

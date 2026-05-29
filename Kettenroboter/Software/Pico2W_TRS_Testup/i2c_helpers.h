@@ -1,5 +1,5 @@
-#ifndef SAMPLE_H
-#define SAMPLE_H
+#ifndef I2C_HELPERS_H
+#define I2C_HELPERS_H
 #include"Arduino.h"
 #include <Wire.h>
 
