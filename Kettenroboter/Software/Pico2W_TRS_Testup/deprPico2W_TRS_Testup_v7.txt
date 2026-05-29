@@ -183,7 +183,7 @@ long unsigned int controller_timestamp = 1000;
 long unsigned int controller_last_timestamp = 0;
 
 uint8_t swcase = 0;
-byte motor_add[] = {MOTOR_L_ADDR, MOTOR_R_ADDR, MD03_ADDR2, MD03_ADDR};
+byte motor_add[] = {MOTOR_L_ADDR, MOTOR_B_ADDR, MD03_ADDR2, MD03_ADDR};
 byte regs[] = {DIR_REG, STATUS_REG, SPEED_REG, ACCEL_REG, TEMP_REG, CURR_REG, VERSION_REG};
 byte motor = 0;
 bool can_available = false;
@@ -512,7 +512,7 @@ void loopCore1(){ // Core1: Motor control, QEI & Control loops
             Wire.beginTransmission(motor_add[j]);
             Wire.write(regs[jj]);
             byte transmission_error = Wire.endTransmission(false); // RESTART anfordern
-            //transmission_error = 1; //
+            transmission_error = 1; //
             // Fehlerbehandlung beim Schreiben
             if (transmission_error != 0) {
                 // Reset des Busses bei schwerem Fehler
