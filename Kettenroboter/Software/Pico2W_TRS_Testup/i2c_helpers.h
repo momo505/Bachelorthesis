@@ -11,4 +11,5 @@ void setMotorDirection(byte address, byte direction);
 bool wireCheckAdressPresent(TwoWire* inter, byte addr, byte safereg);
 //uint32_t wireCheckPresence();
 bool wireCheckPresence(TwoWire &bus, byte addr);
+uint8_t wireWrite2Regs(TwoWire &Bus, byte address, byte register1, byte value1, byte register2, byte value2);
 #endif

@@ -49,3 +49,12 @@ bool wireCheckPresence(TwoWire &Bus, byte addr){
     }
     // oder return (error == 0);
 }
+
+uint8_t wireWrite2Regs(TwoWire &Bus, byte address, byte register1, byte value1, byte register2, byte value2){
+        Bus.beginTransmission(address);
+        Bus.write(register1);
+        Bus.write(value1);
+        Bus.write(register2);
+        Bus.write(value2);
+        return Bus.endTransmission();
+}

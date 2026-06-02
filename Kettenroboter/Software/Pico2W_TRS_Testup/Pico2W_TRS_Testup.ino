@@ -85,7 +85,8 @@ byte float_to_byte(float in) {
 uint32_t c1_flags;
 
 // ========================= CoreToCore-FIFO =========================
-enum command_t {
+
+typedef enum{
     stop,           // Hard Stop Befehl 
     forward,        // vorwärts
     backward,       // rückwärts
@@ -94,25 +95,32 @@ enum command_t {
     manual,         // manueller Modus vorerst als langsames vorwärts definiert
     test_1,
     test_2,
+    test_3,
     set_flag_and,
     set_flag_xor,
     set_motor_speed,
     motors_connected
-};
+} command_t;
 
-union fifo_command_t{
-    uint32_t uint32;
+typedef union { 
+    uint32_t uint32;    
     command_t command;
-};
+    } fifo_command_t;
 
-const char input_chars[] = 		    {'s',       'f',			'b',			'l',		'r',	    'n',	'm',        '1',        '2'}; //original f b l r s
-const command_t char_meaning[] = 	{stop,      forward,	    backward,	    left,	    right,	    none,   manual,     test_1,      test_2};
+const char input_chars[] = 		    {'s',   'f',        'b',        'l',    'r',    'n',    'm',    '1',    '2',    '3'}; //original f b l r s
+const command_t char_meaning[] = 	{stop,  forward,    backward,   left,   right,  none,   manual, test_1, test_2, test_3};
 
 
 //const fifo_command_t char_dict[];
 
-const union fifo_command_t char_dict[] = {{.command = stop},{.command = forward},{.command = backward},{.command = left},{.command = right},{.command = none},{.command = manual},{.command = test_1},{.command = test_2}
+
+const /*union*/ fifo_command_t char_dict[] = {{.command = stop},{.command = forward},{.command = backward},{.command = left},{.command = right},{.command = none},{.command = manual},{.command = test_1},{.command = test_2}
 };
+
+
+
+
+
 
 //*
 // ========================= Postbox / Pico-SDK Mutex =========================
@@ -154,16 +162,19 @@ queue_t motor_queue;
 
 // ========================= MySerial ========================= 
 #include "my_serial.h"
-MySerialUSB MySerial(1);
+MySerialUSB MySerial(1); //legt fest welcher Core in serial schreiben kann
 
 // ========================= CONFIG =========================
 // SINGLECORE-MODE (runs both loops sequentially on core0)
 const bool singlecore = false;
 
+const bool debug = true;
+
 const bool request_queue_output = true;
 
 // Serielle Schnittstelle (choose which Core the seriel port gets connected to)
-const bool core0_serial = true;
+//const bool core0_serial = true;
+
 
 // ========================= SETUP =========================
 //Flagge auf Core 1
@@ -171,7 +182,8 @@ uint32_t c1_control_flag = (C1_MOVEMENT_ALLOWED); // | C1_GATHER_MOTORDATA);
 
 uint rd_step, ld_step; // Steps des linken & Rechten Antriebsmotors
 int r_position, l_position;
-byte ld_speed_target, rd_speed_target = 0x0F; //0;
+byte ld_speed_target = 0xA0;
+byte rd_speed_target = 0xA0; //0;
 byte ld_speed_output, rd_speed_output = 0;
 byte rd_curr_speed, ld_curr_speed = 0;
 
@@ -202,6 +214,36 @@ bool sensor_presence[5] = {false};
 bool test;
 
 fifo_command_t testcommand = {.command = manual};
+
+// ========================= SPECIAL_COMMAND_HANDLER =========================
+bool special_command_handler(uint32_t input){
+    fifo_command_t read;
+    read.uint32 = input;
+    if(read.uint32 > 4){
+        switch(input){
+            case test_1:
+                wireWrite2Regs(Wire, MOTOR_R_ADDR, DIR_REG , 0x01, SPEED_REG, 0xFF);
+                wireWrite2Regs(Wire, MOTOR_L_ADDR, DIR_REG , 0x01, SPEED_REG, 0xFF);
+                ld_speed_target = 0xFF;
+                ld_speed_target = 0xFF;
+                break;
+            case test_2:
+                wireWrite2Regs(Wire, MOTOR_R_ADDR, DIR_REG , 0x01, SPEED_REG, 0x00);
+                wireWrite2Regs(Wire, MOTOR_L_ADDR, DIR_REG , 0x01, SPEED_REG, 0x00);
+                ld_speed_target = 0x00;
+                ld_speed_target = 0x00;
+                break;
+            case test_3:
+                MySerial.core = ((MySerial.core +1)%2);
+                break;
+            default:
+                break;
+            }
+        return true;
+    }else{
+        return false;
+    }
+}
 
 void setup() {
     // Serial Setup
@@ -420,16 +462,16 @@ void loop() {
         // Test:
         MySerial.println(" Commmand-Feedback-Loop:");
         switch (recieved2.command){
-                case forward:
-                    MySerial.println("acknowledged command forward");
-                    break;
-                case backward:
-                    MySerial.println("acknowledged command backward");
-                    break;
-                default:
-                    //MySerial.print("ERROR, not understood "); MySerial.print(recieved2.command); MySerial.print(" , "); MySerial.println(recieved2.uint32);
-                    break;
-        }
+            case forward:
+                MySerial.println("acknowledged command forward");
+                break;
+            case backward:
+            MySerial.println("acknowledged command backward");
+                break;
+            default:
+                //MySerial.print("ERROR, not understood "); MySerial.print(recieved2.command); MySerial.print(" , "); MySerial.println(recieved2.uint32);
+                break;
+            }
     }
 
     MySerial.println("loop0 finished");
@@ -457,7 +499,7 @@ void loopCore1(){ // Core1: Motor control, QEI & Control loops
     controller_timestamp = millis();
 
 
-
+    ld_curr_speed = ld_step;
     //Pico-QEI:
     MySerial.print("Pico-QEI:");
     Encoder_LD.update();
@@ -473,18 +515,15 @@ void loopCore1(){ // Core1: Motor control, QEI & Control loops
     MySerial.print(Encoder_RD.position);
     MySerial.print(", RD step: ");
     MySerial.println(Encoder_RD.step);
+
+    ld_curr_speed -= ld_step;
+    ld_curr_speed = ld_curr_speed / (controller_timestamp - controller_last_timestamp);
     
 
     ///*
     // Read Command from FIFO
-    MySerial.println(" >>>>>>>||| FIFO-CHECK ||| <<<<<<<");
+    //MySerial.println(" >>>>>>>||| FIFO-CHECK ||| <<<<<<<");
     if(rp2040.fifo.available() > 0){
-        /*
-        union {
-            uint32_t uint32;
-            command_t command;
-        } recieved;
-        */
         fifo_command_t recieved;
 
         //uint32_t* pointer;
@@ -492,11 +531,24 @@ void loopCore1(){ // Core1: Motor control, QEI & Control loops
         //command_t recieved;
         rp2040.fifo.pop_nb(&recieved.uint32);
         // Test:
-        MySerial.print(" ");
+        //MySerial.print(" ");
         if(rp2040.fifo.push_nb(recieved.command)){
-            MySerial.println(" >>>>>>>||| FIFO-Feedback Push ||| <<<<<<<");
+            //MySerial.println(" >>>>>>>||| FIFO-Feedback Push ||| <<<<<<<");
         };
         curr_command = recieved.command;
+        switch(curr_command){
+            case stop:
+                // Not-Stop
+                break;
+            case test_1:
+            case test_2:
+                break;
+            default:
+                if(special_command_handler(recieved.uint32)){
+                    MySerial.println("Special Command handled");
+                }
+                break;
+        }
     }
     //*/
     
@@ -566,18 +618,17 @@ void loopCore1(){ // Core1: Motor control, QEI & Control loops
     }
 
     // Control Loops:
-    ld_speed_output = float_to_byte(LD_Controller.calculate_out((float)(ld_curr_speed-ld_speed_target), (float)(controller_last_timestamp - controller_timestamp)));
-    rd_speed_output = float_to_byte(RD_Controller.calculate_out((float)(rd_curr_speed-rd_speed_target), (float)(controller_last_timestamp - controller_timestamp)));
+    MySerial.println("[]> Controller: ");
+    MySerial.print("LD: current speed: "); MySerial.print(ld_curr_speed); MySerial.print(" , speed target: "); MySerial.print(ld_speed_target);
+    ld_speed_output = float_to_byte(LD_Controller.calculate_out((float)(0xFF - ld_speed_target), (float)(controller_last_timestamp - controller_timestamp)));
+    //ld_speed_output = float_to_byte(LD_Controller.calculate_out((float)(ld_curr_speed-ld_speed_target), (float)(controller_last_timestamp - controller_timestamp)));
+    //rd_speed_output = float_to_byte(RD_Controller.calculate_out((float)(rd_curr_speed-rd_speed_target), (float)(controller_last_timestamp - controller_timestamp)));
+    MySerial.print(" , new speed: "); MySerial.println(ld_speed_output);
     MySerial.print("Controller Output: ld out: "); MySerial.print(ld_speed_output); MySerial.print(", rd out: "); MySerial.println(rd_speed_output);
 
     // Send Motor Commands:
-    for(int i = 0; i < 1; i++){ 
-        Wire.beginTransmission(MOTOR_L_ADDR);
-        Wire.write(DIR_REG);
-        Wire.write(0x01);
-        Wire.write(SPEED_REG);
-        Wire.write(0x30);
-        Wire.endTransmission();
+    for(int i = 0; i < 2; i++){ 
+        wireWrite2Regs(Wire, motor_add[i], DIR_REG, 0x01, SPEED_REG, 0xFF);
     }
     
     c1_cycletime = micros() - c1_current_micros;

@@ -72,7 +72,7 @@ int MySerialUSB::available(){
 }
 
 int MySerialUSB::read(){
-	if(rp2040.cpuid() == core){
+	if(true || (rp2040.cpuid() == core)){
 		return Serial.read();
 	}
 	return -1; // Arduino-Standard für "keine Daten vorhanden"
