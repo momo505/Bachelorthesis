@@ -87,19 +87,20 @@ uint32_t c1_flags;
 // ========================= CoreToCore-FIFO =========================
 
 typedef enum{
-    stop,           // Hard Stop Befehl 
-    forward,        // vorwärts
-    backward,       // rückwärts
-    left, right,
-    none,           // leer Befehl noch nicht zugewiesen
-    manual,         // manueller Modus vorerst als langsames vorwärts definiert
+    stop,               // Hard Stop Befehl 
+    forward,            // vorwärts
+    backward,           // rückwärts
+    left, right,        // links bzw rechts
+    none,               // leer Befehl noch nicht zugewiesen
+    manual,             // manueller Modus vorerst als langsames vorwärts definiert
     test_1,
     test_2,
     test_3,
     set_flag_and,
     set_flag_xor,
-    set_motor_speed,
-    motors_connected
+    set_motor_speed,    // bedeutet nächster Wert ist enthät Motor-Geschwingkeits-Werte
+    set_speeds,         // nächster Wert  enthält uint32 mit neuen Geschwindigkeitsvorgaben für PID-Regler (noch implementieren)
+    motors_connected    // Statusmeldung ob alle Motoren an I2C-Bus detektiert (noch implementieren)
 } command_t;
 
 typedef union { 
