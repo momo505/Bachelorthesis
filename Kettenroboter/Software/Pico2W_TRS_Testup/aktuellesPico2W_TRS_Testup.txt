@@ -167,15 +167,15 @@ queue_t motor_queue;
 
 // ========================= MySerial ========================= 
 #include "my_serial.h"
-MySerialUSB MySerial(0); //legt fest welcher Core in serial schreiben kann
+MySerialUSB MySerial(1); //legt fest welcher Core in serial schreiben kann
 
 // ========================= CONFIG =========================
 // SINGLECORE-MODE (runs both loops sequentially on core0)
 const bool singlecore = false;
 
-const bool debug = false;
+const bool debug = true;
 
-const bool request_queue_output = false;
+const bool request_queue_output = true;
 
 // Serielle Schnittstelle (choose which Core the seriel port gets connected to)
 //const bool core0_serial = true;
@@ -209,7 +209,7 @@ bool printvalues = false;
 bool motor_connected = false;
 char serialread;
 
-unsigned long c0_current_micros, c1_current_micros, c0_cycletime, c0_cycletime_m, c1_cycletime, ct_buf = 0;
+unsigned long c0_current_micros, c1_current_micros, c0_cycletime, c1_cycletime, ct_buf = 0;
 
 byte motor_c0_readvalues[4][7] = {0};
 byte motor_c1_readvalues[4][7] = {0};
@@ -319,10 +319,9 @@ void setupCore1(){ // Core1: Motor control, QEI & Control loops
     while(!Serial){delay(10);}
     MySerial.println("Serial Ready ----------------------   ");
 
-    //Wire.setTimeout(5); // Setzt den Timeout auf 5 Millisekunden
+    
     if(Wire.setSCL(I2C0_SCL) && Wire.setSDA(I2C0_SDA)){MySerial.println("starting Motor-I2C");}
-    Wire.setClock(1000000);
-    //Wire.setTimeout(1); // Setzt den Timeout auf 5 Millisekunden
+    Wire.setClock(100000);
     Wire.begin();
     for(int j=0; j<4; j++){
         if(wireCheckPresence(Wire, motor_add[j])){
@@ -360,7 +359,6 @@ void loop() {
 
     MySerial.println("    Ping from Core0");
     MySerial.print(" core0 cycle time: [ c0_CT: "); MySerial.print(c0_cycletime); MySerial.print(" ] microseconds,");
-    MySerial.print(" core1 cycle time: in ms: "); MySerial.print(c0_cycletime_m); MySerial.println(" milliseconds");
     MySerial.print(" core1 cycle time: [ c1_CT: "); MySerial.print(ct_pb); MySerial.println(" ] microseconds");
 
     if(mutexTake(&pb_mutex, &pb_owner)){
@@ -484,8 +482,7 @@ void loop() {
 
     MySerial.println("loop0 finished");
 
-    c0_cycletime = micros() - c0_current_micros;
-    c0_cycletime_m = millis() - c0_currentMillis;
+    c0_cycletime = micros() - c0_current_micros; 
     }
 
     if(singlecore==true){loopCore1();}
@@ -610,7 +607,7 @@ void loopCore1(){ // Core1: Motor control, QEI & Control loops
     queue_try_add(&motor_queue, &C1_Motor_Data); 
 
     // Postbox-Exchange:
-    
+    /*
     // Mutex sperren (z. B. xSemaphoreTake / mutex_enter_blocking)
     if(mutexTake(&pb_mutex, &pb_owner)){
         // Kopiert die 28 Bytes ab dem gewünschten START_INDEX in die Postbox
@@ -628,7 +625,7 @@ void loopCore1(){ // Core1: Motor control, QEI & Control loops
         // Mutex entsperren (z. B. xSemaphoreGive / mutex_exit)
         mutexGive(&pb_mutex);
     }
-    
+    */
 
     // Control Loops:
     MySerial.println("[]> Controller: ");
