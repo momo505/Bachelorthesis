@@ -2,8 +2,12 @@
 #define PID_config_h
 
 // PID parameters
+// alte Werte
 const float Kp = 2000;
 const float Ki = 1700;
 const float Kd = 300;
+// Rumexperimentieren:
+
+
 
 #endif

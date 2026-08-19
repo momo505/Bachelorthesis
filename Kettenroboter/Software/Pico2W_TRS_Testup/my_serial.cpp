@@ -52,7 +52,9 @@ size_t MySerialUSB::write(uint8_t character){
 MySerialUSB::MySerialUSB(uint8_t select) : core(select) {}
 
 void MySerialUSB::begin(unsigned long mybaud){
-	Serial.begin(mybaud);
+	if(rp2040.cpuid() == core){
+		Serial.begin(mybaud);
+	}
 }
 
 // Ausgabe
@@ -72,7 +74,7 @@ int MySerialUSB::available(){
 }
 
 int MySerialUSB::read(){
-	if(true || (rp2040.cpuid() == core)){
+	if(rp2040.cpuid() == core){
 		return Serial.read();
 	}
 	return -1; // Arduino-Standard für "keine Daten vorhanden"

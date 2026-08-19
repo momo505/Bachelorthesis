@@ -62,12 +62,10 @@ PicoEncoder Encoder_LD;
 PicoEncoder Encoder_RD;
 PicoEncoder Encoder_LF;
 PicoEncoder Encoder_RF;
-PicoEncoder PicoEncoders[] = {Encoder_LD, Encoder_RD, Encoder_LF, Encoder_RF};
 
 // ========================= PID =========================
 #include "PID.h"
 #include "PID_config.h"
-#include "PID_helpers.h"
 PID LD_Controller(false);
 PID RD_Controller(false);
 PID LF_Controller(false); // ?
@@ -91,17 +89,14 @@ byte float_to_byte(float in) {
 uint32_t c1_flags;
 
 // ========================= CoreToCore-FIFO =========================
-// Special Enum Commands that can be send through FIFO as int
+
 typedef enum{
     stop,               // Hard Stop Befehl 
     forward,            // vorwärts
     backward,           // rückwärts
     left, right,        // links bzw rechts
-    homeFlippers,        // Flipperarme homen
     none,               // leer Befehl noch nicht zugewiesen
     manual,             // manueller Modus vorerst als langsames vorwärts definiert
-    overdrive,          // setzt Antriebsmotoren auf max. Geschwindigkeit
-    speed1,             // setze Geschwindigkeit auf festgelegten Wert
     test_1,
     test_2,
     test_3,
@@ -117,12 +112,14 @@ typedef union {
     command_t command;
     } fifo_command_t;
 
-const char input_chars[] = 		    {'s',   'f',        'b',        'l',    'r',    'h',            'n',    'm',    'o',       '1',        '7',    '8',    '9'}; //original f b l r s
-const command_t char_meaning[] = 	{stop,  forward,    backward,   left,   right,  homeFlippers,  none,   manual, overdrive,  speed1,   test_1, test_2, test_3};
+const char input_chars[] = 		    {'s',   'f',        'b',        'l',    'r',    'n',    'm',    '1',    '2',    '3'}; //original f b l r s
+const command_t char_meaning[] = 	{stop,  forward,    backward,   left,   right,  none,   manual, test_1, test_2, test_3};
+
 
 //const fifo_command_t char_dict[];
 
-const /*union*/ fifo_command_t char_dict[] = {{.command = stop},{.command = forward},{.command = backward},{.command = left},{.command = right},{.command = homeFlippers},{.command = none},{.command = manual},{.command = overdrive},{.command = speed1},{.command = test_1},{.command = test_2}
+
+const /*union*/ fifo_command_t char_dict[] = {{.command = stop},{.command = forward},{.command = backward},{.command = left},{.command = right},{.command = none},{.command = manual},{.command = test_1},{.command = test_2}
 };
 
 
@@ -155,8 +152,6 @@ uint32_t serial_owner;
 
 command_t curr_command;
 
-fifo_command_t answer;
-
 //*
 
 // ========================= Pico-SDK Queue =========================
@@ -182,7 +177,7 @@ const bool debug = false;
 
 const bool request_queue_output = false;
 
-// Serielle Schnittstelle (choose which Core the serial port gets connected to)
+// Serielle Schnittstelle (choose which Core the seriel port gets connected to)
 //const bool core0_serial = true;
 
 
@@ -191,21 +186,12 @@ const bool request_queue_output = false;
 uint32_t c1_control_flag = (C1_MOVEMENT_ALLOWED); // | C1_GATHER_MOTORDATA);
 
 uint rd_step, ld_step; // Steps des linken & Rechten Antriebsmotors
-uint lf_step, rf_step; // Steps des linken / rechten Flipperarms
 int r_position, l_position;
-byte ld_speed_target = 160; //0xA0;
-byte rd_speed_target = 160; //0xA0; //0;
+byte ld_speed_target = 0xA0;
+byte rd_speed_target = 0xA0; //0;
 byte ld_speed_output, rd_speed_output = 0;
+byte rd_curr_speed, ld_curr_speed = 0;
 
-int ld_curr_speed, rd_curr_speed = 0;
-
-float ld_speed_target_meters = 0.7; 
-float rd_speed_target_meters = 0.1;
-float ld_curr_speed_meters, rd_curr_speed_meters = 0;
-
-float control_time_difference = 10000;
-
-bool get_motordata = false;
 bool success;
 byte error = 10;
 unsigned long c0_lastExecutedMillis, c1_lastExecutedMillis = 0;
@@ -215,7 +201,6 @@ long unsigned int controller_last_timestamp = 0;
 
 uint8_t swcase = 0;
 byte motor_add[] = {MOTOR_L_ADDR, MOTOR_R_ADDR, MD03_ADDR2, MD03_ADDR};
-const int motor_qei_phases[] = {0x3F3D41, 0x3F433E, 0, 0};
 byte regs[] = {DIR_REG, STATUS_REG, SPEED_REG, ACCEL_REG, TEMP_REG, CURR_REG, VERSION_REG};
 byte motor = 0;
 bool can_available = false;
@@ -230,7 +215,6 @@ byte motor_c0_readvalues[4][7] = {0};
 byte motor_c1_readvalues[4][7] = {0};
 
 bool sensor_presence[5] = {false};
-bool driver_presence[4] = {false};
 
 bool test;
 
@@ -242,6 +226,18 @@ bool special_command_handler(uint32_t input){
     read.uint32 = input;
     if(read.uint32 > 4){
         switch(input){
+            case test_1:
+                wireWrite2Regs(Wire, MOTOR_R_ADDR, DIR_REG , 0x01, SPEED_REG, 0xFF);
+                wireWrite2Regs(Wire, MOTOR_L_ADDR, DIR_REG , 0x01, SPEED_REG, 0xFF);
+                ld_speed_target = 0xFF;
+                ld_speed_target = 0xFF;
+                break;
+            case test_2:
+                wireWrite2Regs(Wire, MOTOR_R_ADDR, DIR_REG , 0x01, SPEED_REG, 0x00);
+                wireWrite2Regs(Wire, MOTOR_L_ADDR, DIR_REG , 0x01, SPEED_REG, 0x00);
+                ld_speed_target = 0x00;
+                ld_speed_target = 0x00;
+                break;
             case test_3:
                 MySerial.core = ((MySerial.core +1)%2);
                 break;
@@ -253,36 +249,22 @@ bool special_command_handler(uint32_t input){
         return false;
     }
 }
-/*            case test_1:
-                wireWrite2Regs(Wire, MOTOR_R_ADDR, DIR_REG , 0x01, SPEED_REG, 0xFF);
-                wireWrite2Regs(Wire, MOTOR_L_ADDR, DIR_REG , 0x01, SPEED_REG, 0xFF);
-                ld_speed_target = 0xFF;
-                ld_speed_target = 0xFF;
-                break;
-            case test_2:
-                wireWrite2Regs(Wire, MOTOR_R_ADDR, DIR_REG , 0x01, SPEED_REG, 0x00);
-                wireWrite2Regs(Wire, MOTOR_L_ADDR, DIR_REG , 0x01, SPEED_REG, 0x00);
-                ld_speed_target = 0x00;
-                ld_speed_target = 0x00;
-                break; //*/
-
-// ========================= FLIPPER-HOMING =========================
-void home_flipper(){
-    // if standing / no movement
-    
-}
-
 
 void setup() {
     // Serial Setup
     MySerial.begin(1000000);
     while(!Serial){delay(10);}
-    delay(500);
     MySerial.println("Serial Ready ----------------------   ");
 
     //Mutex für postbox
     initMutex(&pb_mutex);
-
+    /*
+    if(&pb_mutex != NULL){
+        MySerial.println("Mutex created postbox up and working ");
+    }else{
+        MySerial.println("!Error: Could not create Mutex!");
+    }
+    */
     if(mutexTake(&pb_mutex, &pb_owner)){
         MySerial.println("Mutex created postbox up and working ");
         delay(1);
@@ -300,7 +282,7 @@ void setup() {
     // Initialize a queue to hold up to 10 MotorData structs
     queue_init(&motor_queue, sizeof(MotorData), 10);
 
-    MySerial.println("Basic Setup on core0 finished");
+    MySerial.println("Setup on core0 finished");
     MySerial.print(" MCU running at "); MySerial.print(rp2040.f_cpu()/1000); MySerial.println(" kHz");
 
     // Sensor Bus Initialisierung
@@ -330,13 +312,11 @@ void setup() {
 }
 
 void setupCore1(){ // Core1: Motor control, QEI & Control loops
-    delay(500);
     pinMode(LED_BUILTIN, OUTPUT);
 
     // Serial Setup
     MySerial.begin(100000000);
-    //while(!Serial){delay(10);}
-    delay(500);
+    while(!Serial){delay(10);}
     MySerial.println("Serial Ready ----------------------   ");
 
     //Wire.setTimeout(5); // Setzt den Timeout auf 5 Millisekunden
@@ -346,44 +326,21 @@ void setupCore1(){ // Core1: Motor control, QEI & Control loops
     Wire.begin();
     for(int j=0; j<4; j++){
         if(wireCheckPresence(Wire, motor_add[j])){
-            MySerial.print(" | Found device on Wire0 : 0x"); MySerial.print(motor_add[j], HEX);
+            MySerial.print(" | Found device on Wire0 : 0x"); MySerial.print(Sensors[j], HEX);
             motor_connected = true;
-            driver_presence[j] = true;
         }else{
-            MySerial.println(); MySerial.print("ERROR: Wire0 device 0x "); MySerial.print(motor_add[j], HEX); MySerial.println(" not showing ");
+            MySerial.println(); MySerial.print("ERROR: Wire0 device 0x "); MySerial.print(Sensors[j], HEX); MySerial.println(" not showing ");
             motor_connected = false;
-            driver_presence[j] = false;
         }
     }
-    motor_connected = true;
-    for(int i = 0; i<4; i++){
-            if(driver_presence[i] && motor_connected){
-                if(i == 3){
-                    // send motors_connected
-                    answer.command = motors_connected;
-                    rp2040.fifo.push_nb(answer.uint32);
-                }
-            }else{
-                motor_connected = false;
-            }
-        }
-
-    // Feststellbremse
-    // set BRAKE_A adn BRAKE_B as digital out
-    // Bremsen sind verbunden und werden zusammen geschaltet
-    
-    // Hall-Sensor Setup
-    // set HALL_A and HALL_B as digital in
 
     // Pico-QEI Setup
     Encoder_LD.begin(QEI0_A);
     Encoder_RD.begin(QEI1_A);
-    Encoder_LF.begin(QEI2_A);
-    Encoder_RF.begin(QEI3_A);
 
     // PID Setup
     LD_Controller.set_parameters(Kp, Ki, Kd);
-    RD_Controller.set_parameters(Kp, Ki, Kd);
+    LD_Controller.set_parameters(Kp, Ki, Kd);
     //LD_Controller.calculate_out(float e_new, float timediff);
     //LD_Controller.calculate_out(float e_new, float timediff);
 
@@ -397,7 +354,7 @@ void setup1(){ if(singlecore==false){setupCore1();}}
 // ========================= LOOP =========================
 void loop() {
     c0_currentMillis = millis();
-    if (c0_currentMillis - c0_lastExecutedMillis >= 471){ //471
+    if (c0_currentMillis - c0_lastExecutedMillis >= 471){
     c0_lastExecutedMillis = c0_currentMillis; // save the last executed time
     c0_current_micros = micros();
 
@@ -406,7 +363,7 @@ void loop() {
     MySerial.print(" core1 cycle time: in ms: "); MySerial.print(c0_cycletime_m); MySerial.println(" milliseconds");
     MySerial.print(" core1 cycle time: [ c1_CT: "); MySerial.print(ct_pb); MySerial.println(" ] microseconds");
 
-    if(get_motordata && mutexTake(&pb_mutex, &pb_owner)){
+    if(mutexTake(&pb_mutex, &pb_owner)){
         MySerial.println(" Mutex availabe for Core0, copy OP started");
         if(false){//newcontent == true){
             newcontent = false;
@@ -440,13 +397,11 @@ void loop() {
         
         }
     }else{
-        if(get_motordata){
-            MySerial.println("<- Mutex taken ");
-        }
+        MySerial.println("<- Mutex taken ");
     }
 
     // Queue
-    if(get_motordata){
+
     MySerial.println("QUEUE-OUTPUT:");
     if (queue_try_remove(&motor_queue, &C0_Motor_Data) && request_queue_output) {
         // Access the copied array data directly
@@ -460,11 +415,8 @@ void loop() {
     }else{
         MySerial.println("QUEUE: no output");
     }
-    }
-
 
     // Serial Input
-    // Zur Steuerung über serielle Schnittstelle
     MySerial.println("MySerial INPUT:");
     while (MySerial.available() > 0) {
         int serialread = MySerial.read();
@@ -474,7 +426,7 @@ void loop() {
             MySerial.print(" No accepted character: "); MySerial.println(serialread);
             continue;
         }
-        // Prüfe ob Befehl in Array (Befehle für Core1)
+
         bool found = false;
         for (size_t ii = 0; ii < (sizeof(input_chars) / sizeof(char)); ii++) {
             if ((char)serialread == input_chars[ii]) {
@@ -488,25 +440,23 @@ void loop() {
             }
         }
 
-        //Befehle die direkt auf Core0 verarbeitet werden
         if (!found) {
             switch(serialread){
                 case 'x':
                     rp2040.reboot();
                     break;
-                case 'g':
-                    get_motordata = !get_motordata;
-                    break;
                 default:
-                    MySerial.print("! Serial Read ERROR: "); 
-                    MySerial.print((char)serialread);
-                    MySerial.println(" could not parse !");
                     break;
             }
+        }else{
+            MySerial.print("! Serial Read ERROR: "); 
+            MySerial.print((char)serialread);
+            MySerial.println(" could not parse !");
         }
+    
     }
     // Test:
-    //rp2040.fifo.push_nb(testcommand.uint32);
+    rp2040.fifo.push_nb(testcommand.uint32);
     // Zu testen:
     MySerial.print(" FEEDBACK pops available:"); MySerial.println(rp2040.fifo.available());
     while(rp2040.fifo.available()>0){
@@ -524,10 +474,8 @@ void loop() {
                 MySerial.println("acknowledged command forward");
                 break;
             case backward:
-                MySerial.println("acknowledged command backward");
+            MySerial.println("acknowledged command backward");
                 break;
-            case motors_connected:
-                MySerial.println(" MOTOR-BUS WORKING ");
             default:
                 //MySerial.print("ERROR, not understood "); MySerial.print(recieved2.command); MySerial.print(" , "); MySerial.println(recieved2.uint32);
                 break;
@@ -544,44 +492,42 @@ void loop() {
 }
 
 void loopCore1(){ // Core1: Motor control, QEI & Control loops
+    //delay(360);
     c1_currentMillis = millis();
-    if ((c1_currentMillis - c1_lastExecutedMillis >= 1/*300*/)  || (singlecore==true) /* */) {
+    if ((c1_currentMillis - c1_lastExecutedMillis >= 0/*300*/)  || (singlecore==true) /* */) {
     c1_lastExecutedMillis = c1_currentMillis; // save the last executed time
     c1_current_micros = micros();
 
     // Read newest flag values 
-    if(c1_control_flag & 0xf /*checkt alle unter 8 bits*/){
+    if(c1_control_flag || 0xf /*checkt alle unter 8 bits*/){
         // Notstoproutine (noch zu ergänzen)
     }
-    if(!motors_connected){
-        MySerial.println(" ! ERROR: MOTOR-BUS NOT WORKING ! ");
-    }
 
-
-
-    //ld_curr_speed = ld_step;
-    //Pico-QEI:
-    MySerial.println("Pico-QEI:");
-    // Zeitabstand zur letzten Messung:
+    //
     controller_last_timestamp = controller_timestamp;  
     controller_timestamp = millis();
-    //Encoder_LD.update();
-    //Encoder_RD.update();
-    // update all Encoders:
-    for(int i = 0; i<4; i++){
-        PicoEncoders[i].update();
-    }
 
-    //stattdessen Encoder_LD.speed nehmen
-    ld_curr_speed = Encoder_LD.speed;
-    rd_curr_speed = Encoder_RD.speed;
+
+    ld_curr_speed = ld_step;
+    //Pico-QEI:
     MySerial.print("Pico-QEI:");
+    Encoder_LD.update();
+    Encoder_RD.update();
+    ld_step = Encoder_LD.step;
+    rd_step = Encoder_RD.step;
+    MySerial.println(" ");
     MySerial.print(" LD Position: ");
     MySerial.print(Encoder_LD.position);
     MySerial.print(", LD step: ");
     MySerial.print(Encoder_LD.step);
-    MySerial.print(", LD speed: ");
-    MySerial.println(Encoder_LD.speed);
+    MySerial.print(", RD Position: ");
+    MySerial.print(Encoder_RD.position);
+    MySerial.print(", RD step: ");
+    MySerial.println(Encoder_RD.step);
+
+    ld_curr_speed -= ld_step;
+    ld_curr_speed = ld_curr_speed / (controller_timestamp - controller_last_timestamp);
+    
 
     ///*
     // Read Command from FIFO
@@ -590,6 +536,7 @@ void loopCore1(){ // Core1: Motor control, QEI & Control loops
         fifo_command_t recieved;
 
         //uint32_t* pointer;
+
         //command_t recieved;
         rp2040.fifo.pop_nb(&recieved.uint32);
         // Test:
@@ -599,45 +546,11 @@ void loopCore1(){ // Core1: Motor control, QEI & Control loops
         };
         curr_command = recieved.command;
         switch(curr_command){
-            case forward:
-                if(ld_speed_target_meters >= rd_speed_target_meters){
-                    rd_speed_target_meters = ld_speed_target_meters;
-                }else{
-                    ld_speed_target_meters = rd_speed_target_meters;
-                }
-                break;
-            case backward:
-                break;
-            case left:
-                ld_speed_target_meters = 0.5*rd_speed_target_meters;
-                break;
-            case right:
-                rd_speed_target_meters = 0.5*ld_speed_target_meters;
-                break;
             case stop:
                 // Not-Stop
-                ld_speed_target_meters = 0; 
-                rd_speed_target_meters = 0;
-                //wireWrite2Regs(Wire, motor_add[0], DIR_REG, 0x01, SPEED_REG, 0);
-                //wireWrite2Regs(Wire, motor_add[1], DIR_REG, 0x01, SPEED_REG, 0);
-                c1_control_flag = c1_control_flag | C1_EMERGENCY_STOP;
-                //delay(10);
-                break;
-            case overdrive:
-                ld_speed_target = 255; 
-                rd_speed_target = 255;
-                break;
-            case speed1:
-                ld_speed_target_meters = 0.07;
-                rd_speed_target_meters = 0.07;
                 break;
             case test_1:
-                ld_speed_target_meters = 0;
-                rd_speed_target_meters = 0;
-                break;
             case test_2:
-                ld_speed_target_meters = 0.1;
-                rd_speed_target_meters = 0.1;
                 break;
             default:
                 if(special_command_handler(recieved.uint32)){
@@ -652,7 +565,7 @@ void loopCore1(){ // Core1: Motor control, QEI & Control loops
     //Geminis Vorschlag:
     // Read Motor Sensors
     digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN)); 
-    if(false /*c1_control_flag & C1_GATHER_MOTORDATA*/){
+    if(false /*c1_control_flag || C1_GATHER_MOTORDATA*/){
         for (int j = 0; j < 4; j++) {
             for (int jj = 0; jj < 7; jj++) {
         
@@ -716,47 +629,20 @@ void loopCore1(){ // Core1: Motor control, QEI & Control loops
         mutexGive(&pb_mutex);
     }
     
-    millis();
 
     // Control Loops:
     MySerial.println("[]> Controller: ");
-    MySerial.print("LD: current speed: "); MySerial.print(Encoder_LD.speed); MySerial.print(" , speed target: "); MySerial.print(ld_speed_target_meters);
-    
-    if(!(c1_control_flag & C1_EMERGENCY_STOP)){
-    // Umrechnen in m bzw m/s:
-    ld_curr_speed_meters = substeps_to_meters(Encoder_LD.speed);
-    rd_curr_speed_meters = substeps_to_meters(Encoder_RD.speed);
-    
-    // Umrechnen millis in Sek:
-    control_time_difference = (float)((controller_timestamp - controller_last_timestamp)/1000.0f);
-    
-    // Brechnung Ausgang:
-    LD_Controller.calculate_out(ld_speed_target_meters - ld_curr_speed_meters, control_time_difference);
-    RD_Controller.calculate_out(rd_speed_target_meters - rd_curr_speed_meters, control_time_difference);
-    
-    // Conversion zu Byte & Richtung:
-    ld_speed_output = float_to_byte(LD_Controller.y);
-    rd_speed_output = float_to_byte(RD_Controller.y);
-    }
-    else{
-        ld_speed_output = 0;
-        rd_speed_output = 0;
-    }
-    
-    MySerial.print(" , new speed (y): "); MySerial.println(LD_Controller.y);
+    MySerial.print("LD: current speed: "); MySerial.print(ld_curr_speed); MySerial.print(" , speed target: "); MySerial.print(ld_speed_target);
+    ld_speed_output = float_to_byte(LD_Controller.calculate_out((float)(0xFF - ld_speed_target), (float)(controller_last_timestamp - controller_timestamp)));
+    //ld_speed_output = float_to_byte(LD_Controller.calculate_out((float)(ld_curr_speed-ld_speed_target), (float)(controller_last_timestamp - controller_timestamp)));
+    //rd_speed_output = float_to_byte(RD_Controller.calculate_out((float)(rd_curr_speed-rd_speed_target), (float)(controller_last_timestamp - controller_timestamp)));
+    MySerial.print(" , new speed: "); MySerial.println(ld_speed_output);
     MySerial.print("Controller Output: ld out: "); MySerial.print(ld_speed_output); MySerial.print(", rd out: "); MySerial.println(rd_speed_output);
 
-
-
     // Send Motor Commands:
-    wireWrite2Regs(Wire, motor_add[0], DIR_REG, 0x01, SPEED_REG, ld_speed_output);
-    wireWrite2Regs(Wire, motor_add[1], DIR_REG, 0x01, SPEED_REG, rd_speed_output);
-
-    //
-    if(MySerial.read()=='9'){
-        MySerial.core = ((MySerial.core +1)%2);
+    for(int i = 0; i < 2; i++){ 
+        wireWrite2Regs(Wire, motor_add[i], DIR_REG, 0x01, SPEED_REG, 0xFF);
     }
-    
     
     c1_cycletime = micros() - c1_current_micros;
     MySerial.print("[||||]> c1_cycletime: "); MySerial.println(c1_cycletime);
